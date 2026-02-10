@@ -6,12 +6,18 @@ Evidence-grounded, test-anchored, context-aware feature implementation for brown
 
 A complete agent instruction system for AI coding assistants (GitHub Copilot Agent, Claude Code, Cursor, Windsurf, or any LLM-based coding tool). It provides structured methodology, on-demand skills, templates, and persistent memory to make AI agents reliable partners for feature implementation in existing codebases.
 
+## Research Paper
+
+See [`docs/PAPER.md`](docs/PAPER.md) for the full academic paper documenting the methodology's design rationale, evidence base, five schools of thought analysis, and 40 cited references from the research literature.
+
 ## Architecture
 
 ```
 agents/
 ├── AGENTS.md                          # Entry point (~2K tokens, always loaded)
 ├── README.md                          # This file
+├── docs/
+│   └── PAPER.md                       # Academic paper with full evidence base
 ├── skills/                            # Loaded on-demand per phase
 │   ├── apivr-methodology.md           # Full APIVR-Δ cycle definition
 │   ├── context-engineering.md         # Repo mapping, hierarchical localization
@@ -125,7 +131,7 @@ Adjust the complexity thresholds in AGENTS.md to match your team's definition of
 
 ## Research Foundation
 
-This methodology synthesizes findings from:
+See [`docs/PAPER.md`](docs/PAPER.md) for the full evidence base with 40 cited references. Key influences:
 
 - **AlphaCodium** (Ridnik et al., 2024): Flow engineering over prompt engineering
 - **SWE-Agent** (Yang et al., NeurIPS 2024): Agent-Computer Interface design
