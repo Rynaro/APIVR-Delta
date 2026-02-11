@@ -1,6 +1,4 @@
- tree search, role-separated multi-agent systems, and context engineering — into a unified, implementable framework.
-
-Rather than relying on runtime orchestration libraries or custom agent harnesses, APIVR-Δ operates as a declarative specification: a set of markdown instruction files that any LLM-based coding tool can consume. The methodology introduces four key augmentations over prior work: (1) a complexity router that adapts pipeline depth to task difficulty, drawing on adaptive structuring research; (2) test-anchor generation before implementation, informed by AlphaCodium's flow engineering; (3) an evidence-gated failure recovery protocol with structured classification, based on the AgentDebug taxonomy; and (4) a persistent episodic memory system with co# APIVR-Δ: A Flow-Engineered Methodology for LLM-Based Feature Implementation in Brownfield Codebases
+# APIVR-Δ: A Flow-Engineered Methodology for LLM-Based Feature Implementation in Brownfield Codebases
 
 **Version 3.0 — February 2026**
 
@@ -8,7 +6,9 @@ Rather than relying on runtime orchestration libraries or custom agent harnesses
 
 ## Abstract
 
-Large Language Model (LLM) coding agents have demonstrated remarkable capability on isolated programming tasks, yet consistently underperform on brownfield feature implementation — the dominant mode of professional software engineering. We present APIVR-Δ v3.0, a flow-engineered methodology that structures LLM agent behavior through five explicit phases: **A**nalyze, **P**lan, **I**mplement, **V**erify, and **Δ** Delta (with a **R**eflect branch for failure recovery). The methodology synthesizes techniques from five distinct schools of thought in agentic coding — flow engineering, minimal scaffolding,nsolidation rules, extending the Reflexion framework to multi-session workflows.
+Large Language Model (LLM) coding agents have demonstrated remarkable capability on isolated programming tasks, yet consistently underperform on brownfield feature implementation — the dominant mode of professional software engineering. We present APIVR-Δ v3.0, a flow-engineered methodology that structures LLM agent behavior through five explicit phases: **A**nalyze, **P**lan, **I**mplement, **V**erify, and **Δ** Delta (with a **R**eflect branch for failure recovery). The methodology synthesizes techniques from five distinct schools of thought in agentic coding — flow engineering, minimal scaffolding, tree search, role-separated multi-agent systems, and context engineering — into a unified, implementable framework.
+
+Rather than relying on runtime orchestration libraries or custom agent harnesses, APIVR-Δ operates as a declarative specification: a set of markdown instruction files that any LLM-based coding tool can consume. The methodology introduces four key augmentations over prior work: (1) a complexity router that adapts pipeline depth to task difficulty, drawing on adaptive structuring research; (2) test-anchor generation before implementation, informed by AlphaCodium's flow engineering; (3) an evidence-gated failure recovery protocol with structured classification, based on the AgentDebug taxonomy; and (4) a persistent episodic memory system with consolidation rules, extending the Reflexion framework to multi-session workflows.
 
 This paper documents the design rationale for each component, maps every design decision to its supporting evidence in the research literature, and provides a critical assessment of the methodology's limitations and the open questions it does not resolve.
 
