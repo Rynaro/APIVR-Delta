@@ -1,0 +1,60 @@
+# EIIS v1.0 Audit — Phase 5: EXECUTE LOG
+**Eidolon**: apivr
+**Date**: 2026-04-20
+**Approval**: Full (all 16 gaps; GAP-16 flagged, no action)
+
+---
+
+## Directories created
+
+[WROTE] schemas/
+[WROTE] .github/
+[WROTE] hosts/
+[WROTE] evals/
+
+---
+
+## Files created (CREATE)
+
+[WROTE] schemas/install.manifest.v1.json    — GAP-13 — JSON Schema draft 2020-12 per §3
+[WROTE] .github/copilot-instructions.md    — GAP-04 — Copilot primary entry pointing at AGENTS.md
+[WROTE] hosts/claude-code.md               — GAP-08 — Per-host wiring doc
+[WROTE] hosts/copilot.md                   — GAP-09 — Per-host wiring doc
+[WROTE] hosts/cursor.md                    — GAP-10 — Per-host wiring doc
+[WROTE] hosts/opencode.md                  — GAP-11 — Per-host wiring doc
+[WROTE] evals/canary-missions.md           — GAP-12 — 5 smoke missions covering all phases
+[WROTE] agent.md                           — GAP-03 — Always-loaded entry (538 words, 717 tokens)
+[WROTE] apivr.md                           — GAP-06 — Full methodology reference / navigation index
+[WROTE] CLAUDE.md                          — GAP-05 — Claude Code load-order pointer
+[WROTE] INSTALL.md                         — GAP-07 — Human cross-host install guide
+[WROTE] CHANGELOG.md                       — GAP-14 — Keep-a-changelog; initial 3.0.0 + Unreleased entries
+[WROTE] DESIGN-RATIONALE.md               — GAP-15 — Research→decision mapping (6 decisions)
+[WROTE] install.sh                         — GAP-01 — Full §2 interface contract (chmod +x applied)
+
+---
+
+## Files patched (PATCH)
+
+[WROTE] AGENTS.md                          — GAP-02 — §5 YAML frontmatter prepended
+
+---
+
+## Flags (no action)
+
+[FLAGGED] skills/<phase>/SKILL.md structure — GAP-16 — Flat skills/ layout is deliberate design; human decision required
+
+---
+
+## Post-write verification
+
+- install.sh --help: PASS
+- install.sh --dry-run --target /tmp/eiis-verify-$$ --hosts none: PASS
+- AGENTS.md frontmatter present: PASS (lines 1-10 confirmed)
+- agent.md token count: 717 (budget: ≤1000) — PASS
+- All §1 required files present: PASS (see 05-verify.md)
+
+---
+
+## Blocked items
+
+None.

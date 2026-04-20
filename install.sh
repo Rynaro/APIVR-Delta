@@ -1,0 +1,421 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+EIDOLON_NAME="apivr"
+EIDOLON_VERSION="3.0.0"
+METHODOLOGY="APIVR-Δ"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# --- defaults ---
+TARGET="./agents/${EIDOLON_NAME}"
+HOSTS="auto"
+FORCE=false
+DRY_RUN=false
+NON_INTERACTIVE=false
+MANIFEST_ONLY=false
+
+# --- helpers ---
+log()  { echo "  $*"; }
+act()  { echo "  [write] $*"; }
+skip() { echo "  [skip]  $*"; }
+warn() { echo "  [warn]  $*" >&2; }
+die()  { echo "  [error] $*" >&2; exit 1; }
+
+usage() {
+  cat <<EOF
+Usage: bash install.sh [OPTIONS]
+
+Install the ${METHODOLOGY} v${EIDOLON_VERSION} Eidolon into a consumer project.
+
+Options:
+  --target DIR          Target install dir (default: ${TARGET})
+  --hosts LIST          claude-code,copilot,cursor,opencode,all (default: auto)
+  --force               Overwrite existing install
+  --dry-run             Print actions, no writes
+  --non-interactive     No prompts; fail on ambiguity (meta-installer mode)
+  --manifest-only       Only emit install.manifest.json
+  --version             Print Eidolon version
+  -h, --help            Show help
+EOF
+}
+
+# --- arg parsing ---
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --target)           TARGET="$2"; shift 2 ;;
+    --hosts)            HOSTS="$2"; shift 2 ;;
+    --force)            FORCE=true; shift ;;
+    --dry-run)          DRY_RUN=true; shift ;;
+    --non-interactive)  NON_INTERACTIVE=true; shift ;;
+    --manifest-only)    MANIFEST_ONLY=true; shift ;;
+    --version)          echo "${EIDOLON_VERSION}"; exit 0 ;;
+    -h|--help)          usage; exit 0 ;;
+    *)                  echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+  esac
+done
+
+# --- host detection ---
+detect_hosts() {
+  local detected=()
+  [[ -f "CLAUDE.md" || -d ".claude" ]] && detected+=("claude-code")
+  [[ -d ".github" ]]                    && detected+=("copilot")
+  [[ -d ".cursor" || -f ".cursorrules" ]] && detected+=("cursor")
+  [[ -d ".opencode" ]]                  && detected+=("opencode")
+  if [[ ${#detected[@]} -eq 0 ]]; then
+    printf ""
+  else
+    printf "%s\n" "${detected[@]}"
+  fi
+}
+
+if [[ "$HOSTS" == "auto" ]]; then
+  detected_list="$(detect_hosts | paste -sd, || true)"
+  HOSTS="${detected_list:-none}"
+  log "Auto-detected hosts: ${HOSTS}"
+elif [[ "$HOSTS" == "all" ]]; then
+  HOSTS="claude-code,copilot,cursor,opencode"
+fi
+
+# --- idempotency check ---
+MANIFEST_PATH="${TARGET}/install.manifest.json"
+if [[ -f "${MANIFEST_PATH}" && "$FORCE" != "true" ]]; then
+  EXISTING_VER="$(grep -o '"version":"[^"]*"' "${MANIFEST_PATH}" 2>/dev/null | cut -d'"' -f4 || echo "unknown")"
+  if [[ "$EXISTING_VER" == "$EIDOLON_VERSION" ]]; then
+    if [[ "$NON_INTERACTIVE" == "true" ]]; then
+      log "Already at v${EIDOLON_VERSION}. Pass --force to reinstall."
+      exit 0
+    fi
+    read -rp "  Already installed at v${EXISTING_VER}. Reinstall? [y/N] " confirm
+    [[ "$confirm" =~ ^[Yy]$ ]] || { echo "  Aborted."; exit 0; }
+  else
+    if [[ "$NON_INTERACTIVE" == "true" ]]; then
+      die "Existing install v${EXISTING_VER} at ${TARGET}. Pass --force to upgrade."
+    fi
+    read -rp "  Existing install v${EXISTING_VER} found. Upgrade to v${EIDOLON_VERSION}? [y/N] " confirm
+    [[ "$confirm" =~ ^[Yy]$ ]] || { echo "  Aborted."; exit 0; }
+  fi
+fi
+
+# --- sha256 helper ---
+sha256_file() {
+  if command -v shasum &>/dev/null; then
+    shasum -a 256 "$1" | awk '{print $1}'
+  elif command -v sha256sum &>/dev/null; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    echo "00000000000000000000000000000000"
+  fi
+}
+
+# --- dry-run wrapper ---
+do_mkdir() {
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log "[dry-run] mkdir -p $1"
+  else
+    mkdir -p "$1"
+  fi
+}
+
+do_cp() {
+  local src="$1" dst="$2"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    act "[dry-run] cp $src → $dst"
+  else
+    cp "$src" "$dst"
+    act "$dst"
+  fi
+}
+
+do_cp_r() {
+  local src="$1" dst="$2"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    act "[dry-run] cp -r $src/ → $dst/"
+  else
+    cp -r "$src/." "$dst/"
+    act "$dst/ (directory)"
+  fi
+}
+
+do_write() {
+  local path="$1" content="$2"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    act "[dry-run] write $path"
+  else
+    printf '%s' "$content" > "$path"
+    act "$path"
+  fi
+}
+
+do_append() {
+  local path="$1" content="$2"
+  if [[ "$DRY_RUN" == "true" ]]; then
+    act "[dry-run] append → $path"
+  else
+    printf '%s' "$content" >> "$path"
+    act "$path (appended)"
+  fi
+}
+
+# ===== MAIN =====
+
+echo ""
+echo "Installing ${METHODOLOGY} v${EIDOLON_VERSION} → ${TARGET}"
+echo "Hosts: ${HOSTS}"
+echo ""
+
+# --- step 1: create target directory ---
+do_mkdir "${TARGET}"
+do_mkdir "${TARGET}/skills"
+do_mkdir "${TARGET}/templates"
+do_mkdir "${TARGET}/memories"
+
+if [[ "$MANIFEST_ONLY" != "true" ]]; then
+
+  # --- step 2: copy methodology files ---
+  echo "Copying methodology files..."
+  do_cp "${SCRIPT_DIR}/agent.md"  "${TARGET}/agent.md"
+  do_cp "${SCRIPT_DIR}/apivr.md"  "${TARGET}/apivr.md"
+  do_cp_r "${SCRIPT_DIR}/skills"    "${TARGET}/skills"
+  do_cp_r "${SCRIPT_DIR}/templates" "${TARGET}/templates"
+
+  # --- step 3: host dispatch files ---
+  echo ""
+  echo "Wiring hosts..."
+
+  hosts_wired=()
+  IFS=',' read -ra host_list <<< "$HOSTS"
+
+  for host in "${host_list[@]}"; do
+    case "$host" in
+
+      claude-code)
+        hosts_wired+=("claude-code")
+        CLAUDE_MD="./CLAUDE.md"
+        MARKER="agents/${EIDOLON_NAME}/agent.md"
+        if [[ "$DRY_RUN" == "true" ]]; then
+          act "[dry-run] append APIVR-Δ pointer → ${CLAUDE_MD}"
+        else
+          if [[ -f "$CLAUDE_MD" ]] && grep -q "$MARKER" "$CLAUDE_MD" 2>/dev/null; then
+            skip "${CLAUDE_MD} already references ${MARKER}"
+          else
+            do_append "$CLAUDE_MD" "
+## APIVR-Δ Methodology
+
+@${MARKER}
+"
+          fi
+        fi
+        ;;
+
+      copilot)
+        hosts_wired+=("copilot")
+        COPILOT_FILE="./.github/copilot-instructions.md"
+        MARKER="agents/${EIDOLON_NAME}/agent.md"
+        do_mkdir "./.github"
+        if [[ "$DRY_RUN" == "true" ]]; then
+          act "[dry-run] append APIVR-Δ section → ${COPILOT_FILE}"
+        else
+          if [[ -f "$COPILOT_FILE" ]] && grep -q "$MARKER" "$COPILOT_FILE" 2>/dev/null; then
+            skip "${COPILOT_FILE} already references ${MARKER}"
+          else
+            do_append "$COPILOT_FILE" "
+## APIVR-Δ Feature Implementation
+
+For feature implementation tasks, follow the methodology in \`${MARKER}\`.
+
+Non-negotiable rules:
+- Internal First: USE → EXTEND → WRAP → CREATE
+- Test-Anchored: Generate test expectations before implementation
+- Escalate Early: 3 failures at same category = STOP
+"
+          fi
+        fi
+        ;;
+
+      cursor)
+        hosts_wired+=("cursor")
+        if [[ -d "./.cursor" ]]; then
+          do_mkdir "./.cursor/rules"
+          CURSOR_FILE="./.cursor/rules/${EIDOLON_NAME}.mdc"
+          do_write "$CURSOR_FILE" "---
+description: APIVR-Δ feature implementation methodology
+globs: [\"**/*\"]
+alwaysApply: false
+---
+
+For feature implementation tasks, follow the APIVR-Δ methodology.
+
+Entry point: \`agents/${EIDOLON_NAME}/agent.md\`
+Full spec:   \`agents/${EIDOLON_NAME}/apivr.md\`
+
+Cycle: A (Analyze) → P (Plan) → I (Implement) → V (Verify) → Δ (Delta) / R (Reflect)
+
+Non-negotiable:
+- Internal First: USE → EXTEND → WRAP → CREATE
+- Test-Anchored: Generate test cases BEFORE implementation
+- Escalate Early: 3 failures at same category = STOP
+"
+        elif [[ -f "./.cursorrules" ]]; then
+          MARKER="agents/${EIDOLON_NAME}/agent.md"
+          if [[ "$DRY_RUN" == "true" ]]; then
+            act "[dry-run] append APIVR-Δ section → .cursorrules"
+          else
+            if grep -q "$MARKER" ".cursorrules" 2>/dev/null; then
+              skip ".cursorrules already references ${MARKER}"
+            else
+              do_append ".cursorrules" "
+# APIVR-Δ Feature Implementation
+When implementing features, follow the APIVR-Δ methodology in \`${MARKER}\`.
+"
+            fi
+          fi
+        else
+          warn "cursor host requested but neither .cursor/ nor .cursorrules found — skipping"
+          hosts_wired=("${hosts_wired[@]/cursor}")
+        fi
+        ;;
+
+      opencode)
+        hosts_wired+=("opencode")
+        if [[ -d "./.opencode" ]]; then
+          do_mkdir "./.opencode/agents"
+          OPENCODE_FILE="./.opencode/agents/${EIDOLON_NAME}.md"
+          do_write "$OPENCODE_FILE" "---
+name: ${EIDOLON_NAME}
+description: APIVR-Δ feature implementation methodology for brownfield codebases
+---
+
+You are the APIVR-Δ feature implementation agent.
+
+Load your full instructions from: agents/${EIDOLON_NAME}/agent.md
+Full methodology: agents/${EIDOLON_NAME}/apivr.md
+
+Cycle: A → P → I → V → Δ/R
+"
+        else
+          warn "opencode host requested but .opencode/ not found — skipping"
+          hosts_wired=("${hosts_wired[@]/opencode}")
+        fi
+        ;;
+
+      none)
+        log "No hosts detected or specified. Skipping dispatch wiring."
+        ;;
+
+      *)
+        warn "Unknown host: ${host} — skipping"
+        ;;
+    esac
+  done
+
+fi  # end MANIFEST_ONLY guard
+
+# --- step 4: write manifest ---
+echo ""
+echo "Writing install manifest..."
+
+INSTALLED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+hosts_wired_json=""
+if [[ ${#hosts_wired[@]} -gt 0 ]]; then
+  for h in "${hosts_wired[@]}"; do
+    [[ -n "$h" ]] && hosts_wired_json+="\"${h}\","
+  done
+  hosts_wired_json="[${hosts_wired_json%,}]"
+else
+  hosts_wired_json="[]"
+fi
+
+# Build files_written array (only if not dry-run)
+files_written_json="[]"
+if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
+  fw=""
+  add_fw() {
+    local path="$1" role="$2" mode="$3"
+    local sha
+    sha="$(sha256_file "${TARGET}/${path}" 2>/dev/null || echo "00000000")"
+    fw+="{ \"path\": \"${path}\", \"sha256\": \"${sha}\", \"role\": \"${role}\", \"mode\": \"${mode}\" },"
+  }
+  add_fw "agent.md"                     "entry-point" "created"
+  add_fw "apivr.md"                     "spec"        "created"
+  add_fw "skills/apivr-methodology.md"  "skill"       "created"
+  add_fw "skills/context-engineering.md" "skill"      "created"
+  add_fw "skills/failure-recovery.md"   "skill"       "created"
+  add_fw "skills/memory-management.md"  "skill"       "created"
+  add_fw "templates/discovery-report.md" "template"   "created"
+  add_fw "templates/execution-plan.md"  "template"    "created"
+  add_fw "templates/reflect-entry.md"   "template"    "created"
+  files_written_json="[${fw%,}]"
+fi
+
+MANIFEST_CONTENT="{
+  \"eidolon\": \"${EIDOLON_NAME}\",
+  \"version\": \"${EIDOLON_VERSION}\",
+  \"methodology\": \"${METHODOLOGY}\",
+  \"installed_at\": \"${INSTALLED_AT}\",
+  \"target\": \"${TARGET}\",
+  \"hosts_wired\": ${hosts_wired_json},
+  \"files_written\": ${files_written_json},
+  \"handoffs_declared\": {
+    \"upstream\": [],
+    \"downstream\": []
+  },
+  \"token_budget\": {
+    \"entry\": 0,
+    \"working_set_target\": 1000
+  },
+  \"security\": {
+    \"reads_repo\": true,
+    \"reads_network\": false,
+    \"writes_repo\": true,
+    \"persists\": [\"agents/${EIDOLON_NAME}/memories/\"]
+  }
+}"
+
+if [[ "$DRY_RUN" == "true" ]]; then
+  act "[dry-run] write ${MANIFEST_PATH}"
+else
+  printf '%s\n' "$MANIFEST_CONTENT" > "${MANIFEST_PATH}"
+  act "${MANIFEST_PATH}"
+
+  # patch token_budget.entry with actual measurement
+  AGENT_TOKENS=$(wc -w < "${TARGET}/agent.md" | awk '{printf "%d", $1/0.75}')
+  # rewrite manifest with real token count
+  MANIFEST_CONTENT="${MANIFEST_CONTENT/\"entry\": 0/\"entry\": ${AGENT_TOKENS}}"
+  printf '%s\n' "$MANIFEST_CONTENT" > "${MANIFEST_PATH}"
+fi
+
+# --- step 5: token measurement ---
+echo ""
+if [[ "$DRY_RUN" == "true" ]]; then
+  AGENT_TOKENS=$(wc -w < "${SCRIPT_DIR}/agent.md" | awk '{printf "%d", $1/0.75}')
+else
+  AGENT_TOKENS=$(wc -w < "${TARGET}/agent.md" | awk '{printf "%d", $1/0.75}')
+fi
+echo "✓ agent.md: ${AGENT_TOKENS} tokens (budget: ≤1000)"
+
+if [[ "$AGENT_TOKENS" -gt 1000 ]]; then
+  if [[ "$NON_INTERACTIVE" == "true" ]]; then
+    die "agent.md exceeds 1000-token budget (${AGENT_TOKENS} tokens). Aborting."
+  else
+    warn "agent.md token count ${AGENT_TOKENS} exceeds ≤1000 budget. Consider trimming."
+  fi
+fi
+
+# --- step 6: smoke test banner ---
+echo ""
+echo "Installation complete. Smoke test:"
+echo ""
+echo "  Paste this prompt into your host to verify the agent is active:"
+echo ""
+echo "  ┌─────────────────────────────────────────────────────────────────────┐"
+echo "  │ You are the APIVR-Δ agent. A new feature request has arrived.       │"
+echo "  │ State the complexity tier you would assign and the first step        │"
+echo "  │ you would take.                                                      │"
+echo "  └─────────────────────────────────────────────────────────────────────┘"
+echo ""
+echo "  Expected: Agent names a complexity tier (Trivial/Standard/Complex/Uncertain),"
+echo "  starts Analyze, mentions running a repo map before touching any file."
+echo ""
+echo "  Full eval missions: evals/canary-missions.md (in the Eidolon source repo)"
+echo ""
