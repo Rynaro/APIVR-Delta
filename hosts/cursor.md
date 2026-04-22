@@ -3,10 +3,10 @@
 ## 1. Install
 
 ```bash
-bash install.sh --hosts cursor --target ./agents/apivr
+bash install.sh --hosts cursor --target ./.eidolons/apivr
 ```
 
-This copies methodology files to `agents/apivr/` and creates `.cursor/rules/apivr.mdc`.
+This copies methodology files to `.eidolons/apivr/` and creates `.cursor/rules/apivr.mdc`.
 
 ## 2. Config
 
@@ -21,8 +21,8 @@ alwaysApply: false
 
 For feature implementation tasks, follow the APIVR-Δ methodology.
 
-Entry point: `agents/apivr/agent.md`
-Full spec:   `agents/apivr/apivr.md`
+Entry point: `.eidolons/apivr/agent.md`
+Full spec:   `.eidolons/apivr/apivr.md`
 
 Cycle: A (Analyze) → P (Plan) → I (Implement) → V (Verify) → Δ (Delta) / R (Reflect)
 

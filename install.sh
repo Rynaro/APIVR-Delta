@@ -7,7 +7,7 @@ METHODOLOGY="APIVR-Δ"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # --- defaults ---
-TARGET="./agents/${EIDOLON_NAME}"
+TARGET="./.eidolons/${EIDOLON_NAME}"
 HOSTS="auto"
 FORCE=false
 DRY_RUN=false
@@ -75,6 +75,9 @@ if [[ "$HOSTS" == "auto" ]]; then
 elif [[ "$HOSTS" == "all" ]]; then
   HOSTS="claude-code,copilot,cursor,opencode"
 fi
+
+# Relative form of TARGET for @-references and manifest paths (strips leading ./)
+TARGET_REL="${TARGET#./}"
 
 # --- idempotency check ---
 MANIFEST_PATH="${TARGET}/install.manifest.json"
@@ -191,12 +194,13 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
       claude-code)
         hosts_wired+=("claude-code")
         CLAUDE_MD="./CLAUDE.md"
-        MARKER="agents/${EIDOLON_NAME}/agent.md"
+        MARKER="${TARGET_REL}/agent.md"
         if [[ "$DRY_RUN" == "true" ]]; then
           act "[dry-run] append APIVR-Δ pointer → ${CLAUDE_MD}"
+          act "[dry-run] write .claude/agents/${EIDOLON_NAME}.md"
         else
-          if [[ -f "$CLAUDE_MD" ]] && grep -q "$MARKER" "$CLAUDE_MD" 2>/dev/null; then
-            skip "${CLAUDE_MD} already references ${MARKER}"
+          if [[ -f "$CLAUDE_MD" ]] && grep -qE "(\.eidolons|agents)/${EIDOLON_NAME}/agent\.md" "$CLAUDE_MD" 2>/dev/null; then
+            skip "${CLAUDE_MD} already references APIVR-Δ"
           else
             do_append "$CLAUDE_MD" "
 ## APIVR-Δ Methodology
@@ -204,19 +208,48 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
 @${MARKER}
 "
           fi
+
+          # Subagent dispatch — authoritative when claude-code is wired
+          mkdir -p ".claude/agents"
+          if [[ ! -f ".claude/agents/${EIDOLON_NAME}.md" || "$FORCE" == "true" ]]; then
+            cat > ".claude/agents/${EIDOLON_NAME}.md" <<AGENT
+---
+name: ${EIDOLON_NAME}
+description: "Brownfield feature implementation — pattern-first, test-anchored, bounded failure recovery."
+when_to_use: "After a SPECTRA spec exists (or an equivalent human-authored brief) and you need to implement a feature in an existing codebase with an established convention set."
+tools: Read, Edit, Write, Grep, Glob, Bash(git:*), Bash(rspec:*), Bash(jest:*), Bash(pytest:*), Bash(go test:*)
+methodology: ${METHODOLOGY}
+methodology_version: "${EIDOLON_VERSION%.*}"
+role: Coder — bounded implementer with test/pattern anchoring
+handoffs: [idg]
+---
+
+APIVR-Δ runs the A→P→I→V→Δ/R cycle. Given a spec, it anchors on existing
+patterns, implements in bounded chunks, verifies via the project's test
+suite, and emits a delta/reflection when it completes or hits a bounded
+failure.
+
+See \`${TARGET}/agent.md\` for the P0 rules and
+\`${TARGET}/apivr.md\` for the full specification. Skills load on
+demand — see \`${TARGET}/skills/\`.
+AGENT
+            act ".claude/agents/${EIDOLON_NAME}.md"
+          else
+            skip ".claude/agents/${EIDOLON_NAME}.md already exists (use --force to overwrite)"
+          fi
         fi
         ;;
 
       copilot)
         hosts_wired+=("copilot")
         COPILOT_FILE="./.github/copilot-instructions.md"
-        MARKER="agents/${EIDOLON_NAME}/agent.md"
+        MARKER="${TARGET_REL}/agent.md"
         do_mkdir "./.github"
         if [[ "$DRY_RUN" == "true" ]]; then
           act "[dry-run] append APIVR-Δ section → ${COPILOT_FILE}"
         else
-          if [[ -f "$COPILOT_FILE" ]] && grep -q "$MARKER" "$COPILOT_FILE" 2>/dev/null; then
-            skip "${COPILOT_FILE} already references ${MARKER}"
+          if [[ -f "$COPILOT_FILE" ]] && grep -qE "(\.eidolons|agents)/${EIDOLON_NAME}/agent\.md" "$COPILOT_FILE" 2>/dev/null; then
+            skip "${COPILOT_FILE} already references APIVR-Δ"
           else
             do_append "$COPILOT_FILE" "
 ## APIVR-Δ Feature Implementation
@@ -245,8 +278,8 @@ alwaysApply: false
 
 For feature implementation tasks, follow the APIVR-Δ methodology.
 
-Entry point: \`agents/${EIDOLON_NAME}/agent.md\`
-Full spec:   \`agents/${EIDOLON_NAME}/apivr.md\`
+Entry point: \`${TARGET_REL}/agent.md\`
+Full spec:   \`${TARGET_REL}/apivr.md\`
 
 Cycle: A (Analyze) → P (Plan) → I (Implement) → V (Verify) → Δ (Delta) / R (Reflect)
 
@@ -256,12 +289,12 @@ Non-negotiable:
 - Escalate Early: 3 failures at same category = STOP
 "
         elif [[ -f "./.cursorrules" ]]; then
-          MARKER="agents/${EIDOLON_NAME}/agent.md"
+          MARKER="${TARGET_REL}/agent.md"
           if [[ "$DRY_RUN" == "true" ]]; then
             act "[dry-run] append APIVR-Δ section → .cursorrules"
           else
-            if grep -q "$MARKER" ".cursorrules" 2>/dev/null; then
-              skip ".cursorrules already references ${MARKER}"
+            if grep -qE "(\.eidolons|agents)/${EIDOLON_NAME}/agent\.md" ".cursorrules" 2>/dev/null; then
+              skip ".cursorrules already references APIVR-Δ"
             else
               do_append ".cursorrules" "
 # APIVR-Δ Feature Implementation
@@ -287,8 +320,8 @@ description: APIVR-Δ feature implementation methodology for brownfield codebase
 
 You are the APIVR-Δ feature implementation agent.
 
-Load your full instructions from: agents/${EIDOLON_NAME}/agent.md
-Full methodology: agents/${EIDOLON_NAME}/apivr.md
+Load your full instructions from: ${TARGET_REL}/agent.md
+Full methodology: ${TARGET_REL}/apivr.md
 
 Cycle: A → P → I → V → Δ/R
 "
@@ -368,7 +401,7 @@ MANIFEST_CONTENT="{
     \"reads_repo\": true,
     \"reads_network\": false,
     \"writes_repo\": true,
-    \"persists\": [\"agents/${EIDOLON_NAME}/memories/\"]
+    \"persists\": [\"${TARGET_REL}/memories/\"]
   }
 }"
 

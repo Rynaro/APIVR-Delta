@@ -3,10 +3,10 @@
 ## 1. Install
 
 ```bash
-bash install.sh --hosts copilot --target ./agents/apivr
+bash install.sh --hosts copilot --target ./.eidolons/apivr
 ```
 
-This copies methodology files to `agents/apivr/` and appends an APIVR-Δ section to your project's `.github/copilot-instructions.md` (creating it if absent).
+This copies methodology files to `.eidolons/apivr/` and appends an APIVR-Δ section to your project's `.github/copilot-instructions.md` (creating it if absent).
 
 ## 2. Config
 
@@ -15,7 +15,7 @@ The installer writes or appends to `.github/copilot-instructions.md`:
 ```markdown
 ## APIVR-Δ Feature Implementation
 
-For feature implementation tasks, follow the methodology in `agents/apivr/agent.md`.
+For feature implementation tasks, follow the methodology in `.eidolons/apivr/agent.md`.
 
 Non-negotiable rules:
 - Internal First: USE → EXTEND → WRAP → CREATE
@@ -37,6 +37,6 @@ Expected: Agent names `A→P→I→V→Δ/R`, states Discovery Report as the Ana
 
 ## 4. Troubleshooting
 
-**Copilot doesn't follow methodology**: Confirm `.github/copilot-instructions.md` exists and references `agents/apivr/agent.md`. Copilot Agent Mode respects this file; Copilot Chat may need the instruction repeated in the prompt.
+**Copilot doesn't follow methodology**: Confirm `.github/copilot-instructions.md` exists and references `.eidolons/apivr/agent.md`. Copilot Agent Mode respects this file; Copilot Chat may need the instruction repeated in the prompt.
 
 **AGENTS.md not picked up**: Ensure `AGENTS.md` is at the repository root (not nested). Copilot auto-discovery reads the root `AGENTS.md` when using Agent Mode with AGENTS.md support enabled.

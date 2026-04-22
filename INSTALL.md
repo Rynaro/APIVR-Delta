@@ -21,7 +21,7 @@ Auto-detects your project's hosts (`CLAUDE.md`, `.github/`, `.cursor/`, `.openco
 Usage: bash install.sh [OPTIONS]
 
 Options:
-  --target DIR          Target install dir (default: ./agents/apivr)
+  --target DIR          Target install dir (default: ./.eidolons/apivr)
   --hosts LIST          claude-code,copilot,cursor,opencode,all (default: auto)
   --force               Overwrite existing install
   --dry-run             Print actions, no writes
@@ -56,12 +56,12 @@ If you prefer not to use the script, copy files manually:
 ### 1. Copy methodology files
 
 ```bash
-mkdir -p agents/apivr
-cp agent.md       agents/apivr/agent.md
-cp apivr.md       agents/apivr/apivr.md
-cp -r skills/     agents/apivr/skills/
-cp -r templates/  agents/apivr/templates/
-mkdir -p agents/apivr/memories
+mkdir -p .eidolons/apivr
+cp agent.md       .eidolons/apivr/agent.md
+cp apivr.md       .eidolons/apivr/apivr.md
+cp -r skills/     .eidolons/apivr/skills/
+cp -r templates/  .eidolons/apivr/templates/
+mkdir -p .eidolons/apivr/memories
 ```
 
 ### 2. Wire to your host
@@ -72,7 +72,7 @@ Add to your `CLAUDE.md`:
 
 ```markdown
 ## APIVR-Δ Methodology
-@agents/apivr/agent.md
+@.eidolons/apivr/agent.md
 ```
 
 #### GitHub Copilot
@@ -80,7 +80,7 @@ Add to your `CLAUDE.md`:
 Add to `.github/copilot-instructions.md`:
 
 ```markdown
-For feature implementation, follow the methodology in `agents/apivr/agent.md`.
+For feature implementation, follow the methodology in `.eidolons/apivr/agent.md`.
 ```
 
 #### Cursor
@@ -93,19 +93,19 @@ description: APIVR-Δ feature implementation methodology
 globs: ["**/*"]
 alwaysApply: false
 ---
-For feature implementation tasks, follow agents/apivr/agent.md.
+For feature implementation tasks, follow .eidolons/apivr/agent.md.
 ```
 
 #### OpenCode
 
-Create `.opencode/agents/apivr.md`:
+Create `.opencode/.eidolons/apivr.md`:
 
 ```markdown
 ---
 name: apivr
 description: APIVR-Δ feature implementation methodology
 ---
-Follow agents/apivr/agent.md for all feature implementation tasks.
+Follow .eidolons/apivr/agent.md for all feature implementation tasks.
 ```
 
 ---
@@ -149,7 +149,7 @@ The installer compares the existing `install.manifest.json` version against the 
 Delete the installed files:
 
 ```bash
-rm -rf agents/apivr/
+rm -rf .eidolons/apivr/
 ```
 
-Remove the dispatch lines added to `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/apivr.mdc`, or `.opencode/agents/apivr.md` as applicable.
+Remove the dispatch lines added to `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/apivr.mdc`, or `.opencode/.eidolons/apivr.md` as applicable.
