@@ -159,6 +159,61 @@ do_append() {
   fi
 }
 
+# upsert_eidolon_block <file> <content>
+#
+# Owns a marker-bounded region in a composable dispatch file. Rewrites the
+# body in place when markers already exist; appends a new block otherwise.
+# Cleans up any pre-existing symlink at the target.
+upsert_eidolon_block() {
+  local dst="$1" content="$2"
+  local start="<!-- eidolon:${EIDOLON_NAME} start -->"
+  local end="<!-- eidolon:${EIDOLON_NAME} end -->"
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    local action="append"
+    [[ -f "$dst" ]] && grep -qF "$start" "$dst" 2>/dev/null && action="rewrite"
+    act "[dry-run] ${action} eidolon:${EIDOLON_NAME} block in ${dst}"
+    return
+  fi
+
+  mkdir -p "$(dirname "$dst")" 2>/dev/null || true
+  [[ -L "$dst" ]] && rm -f "$dst"
+
+  local content_file tmp
+  content_file="$(mktemp)"
+  printf '%s\n' "$content" > "$content_file"
+
+  if [[ -f "$dst" ]] && grep -qF "$start" "$dst" 2>/dev/null; then
+    tmp="$(mktemp)"
+    awk -v start="$start" -v end="$end" -v cf="$content_file" '
+      BEGIN { in_block = 0 }
+      $0 == start {
+        print start
+        while ((getline line < cf) > 0) print line
+        close(cf)
+        in_block = 1
+        next
+      }
+      $0 == end {
+        print end
+        in_block = 0
+        next
+      }
+      !in_block { print }
+    ' "$dst" > "$tmp"
+    mv "$tmp" "$dst"
+    act "${dst} (rewrote eidolon:${EIDOLON_NAME} block)"
+  elif [[ -f "$dst" ]]; then
+    { printf '\n%s\n' "$start"; cat "$content_file"; printf '%s\n' "$end"; } >> "$dst"
+    act "${dst} (appended eidolon:${EIDOLON_NAME} block)"
+  else
+    { printf '%s\n' "$start"; cat "$content_file"; printf '%s\n' "$end"; } > "$dst"
+    act "${dst} (created with eidolon:${EIDOLON_NAME} block)"
+  fi
+
+  rm -f "$content_file"
+}
+
 # ===== MAIN =====
 
 echo ""
@@ -188,28 +243,31 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   hosts_wired=()
   IFS=',' read -ra host_list <<< "$HOSTS"
 
+  # Shared composable block — emitted identically to AGENTS.md, CLAUDE.md,
+  # .github/copilot-instructions.md. Each Eidolon owns its marker-bounded
+  # section within these files.
+  SHARED_BLOCK="## APIVR-Δ — Brownfield feature implementation (v${EIDOLON_VERSION})
+
+Entry:     \`${TARGET_REL}/agent.md\`
+Full spec: \`${TARGET_REL}/apivr.md\`
+Cycle:     A (Analyze) → P (Plan) → I (Implement) → V (Verify) → Δ (Delta) / R (Reflect)
+
+**P0 (non-negotiable):** Internal First (USE → EXTEND → WRAP → CREATE); test-anchored (expected test cases before implementation); boundary-respect (no out-of-scope edits); evidence-based (no speculation); escalate early (3 failures at same category = STOP)."
+
+  # AGENTS.md is the host-agnostic open-standard file; emit unconditionally.
+  upsert_eidolon_block "AGENTS.md" "$SHARED_BLOCK"
+
   for host in "${host_list[@]}"; do
     case "$host" in
 
       claude-code)
         hosts_wired+=("claude-code")
-        CLAUDE_MD="./CLAUDE.md"
-        MARKER="${TARGET_REL}/agent.md"
+        upsert_eidolon_block "CLAUDE.md" "$SHARED_BLOCK"
+
+        # Subagent dispatch — authoritative when claude-code is wired.
         if [[ "$DRY_RUN" == "true" ]]; then
-          act "[dry-run] append APIVR-Δ pointer → ${CLAUDE_MD}"
           act "[dry-run] write .claude/agents/${EIDOLON_NAME}.md"
         else
-          if [[ -f "$CLAUDE_MD" ]] && grep -qE "(\.eidolons|agents)/${EIDOLON_NAME}/agent\.md" "$CLAUDE_MD" 2>/dev/null; then
-            skip "${CLAUDE_MD} already references APIVR-Δ"
-          else
-            do_append "$CLAUDE_MD" "
-## APIVR-Δ Methodology
-
-@${MARKER}
-"
-          fi
-
-          # Subagent dispatch — authoritative when claude-code is wired
           mkdir -p ".claude/agents"
           if [[ ! -f ".claude/agents/${EIDOLON_NAME}.md" || "$FORCE" == "true" ]]; then
             cat > ".claude/agents/${EIDOLON_NAME}.md" <<AGENT
@@ -242,27 +300,7 @@ AGENT
 
       copilot)
         hosts_wired+=("copilot")
-        COPILOT_FILE="./.github/copilot-instructions.md"
-        MARKER="${TARGET_REL}/agent.md"
-        do_mkdir "./.github"
-        if [[ "$DRY_RUN" == "true" ]]; then
-          act "[dry-run] append APIVR-Δ section → ${COPILOT_FILE}"
-        else
-          if [[ -f "$COPILOT_FILE" ]] && grep -qE "(\.eidolons|agents)/${EIDOLON_NAME}/agent\.md" "$COPILOT_FILE" 2>/dev/null; then
-            skip "${COPILOT_FILE} already references APIVR-Δ"
-          else
-            do_append "$COPILOT_FILE" "
-## APIVR-Δ Feature Implementation
-
-For feature implementation tasks, follow the methodology in \`${MARKER}\`.
-
-Non-negotiable rules:
-- Internal First: USE → EXTEND → WRAP → CREATE
-- Test-Anchored: Generate test expectations before implementation
-- Escalate Early: 3 failures at same category = STOP
-"
-          fi
-        fi
+        upsert_eidolon_block ".github/copilot-instructions.md" "$SHARED_BLOCK"
         ;;
 
       cursor)
@@ -270,7 +308,10 @@ Non-negotiable rules:
         if [[ -d "./.cursor" ]]; then
           do_mkdir "./.cursor/rules"
           CURSOR_FILE="./.cursor/rules/${EIDOLON_NAME}.mdc"
-          do_write "$CURSOR_FILE" "---
+          if [[ -f "$CURSOR_FILE" && "$FORCE" != "true" ]]; then
+            skip "${CURSOR_FILE} exists (pass --force to overwrite)"
+          else
+            do_write "$CURSOR_FILE" "---
 description: APIVR-Δ feature implementation methodology
 globs: [\"**/*\"]
 alwaysApply: false
@@ -288,20 +329,10 @@ Non-negotiable:
 - Test-Anchored: Generate test cases BEFORE implementation
 - Escalate Early: 3 failures at same category = STOP
 "
-        elif [[ -f "./.cursorrules" ]]; then
-          MARKER="${TARGET_REL}/agent.md"
-          if [[ "$DRY_RUN" == "true" ]]; then
-            act "[dry-run] append APIVR-Δ section → .cursorrules"
-          else
-            if grep -qE "(\.eidolons|agents)/${EIDOLON_NAME}/agent\.md" ".cursorrules" 2>/dev/null; then
-              skip ".cursorrules already references APIVR-Δ"
-            else
-              do_append ".cursorrules" "
-# APIVR-Δ Feature Implementation
-When implementing features, follow the APIVR-Δ methodology in \`${MARKER}\`.
-"
-            fi
           fi
+        elif [[ -f "./.cursorrules" ]]; then
+          # Legacy single-file Cursor rules — emit marker-bounded block.
+          upsert_eidolon_block ".cursorrules" "$SHARED_BLOCK"
         else
           warn "cursor host requested but neither .cursor/ nor .cursorrules found — skipping"
           hosts_wired=("${hosts_wired[@]/cursor}")
@@ -313,7 +344,10 @@ When implementing features, follow the APIVR-Δ methodology in \`${MARKER}\`.
         if [[ -d "./.opencode" ]]; then
           do_mkdir "./.opencode/agents"
           OPENCODE_FILE="./.opencode/agents/${EIDOLON_NAME}.md"
-          do_write "$OPENCODE_FILE" "---
+          if [[ -f "$OPENCODE_FILE" && "$FORCE" != "true" ]]; then
+            skip "${OPENCODE_FILE} exists (pass --force to overwrite)"
+          else
+            do_write "$OPENCODE_FILE" "---
 name: ${EIDOLON_NAME}
 description: APIVR-Δ feature implementation methodology for brownfield codebases
 ---
@@ -325,6 +359,7 @@ Full methodology: ${TARGET_REL}/apivr.md
 
 Cycle: A → P → I → V → Δ/R
 "
+          fi
         else
           warn "opencode host requested but .opencode/ not found — skipping"
           hosts_wired=("${hosts_wired[@]/opencode}")
