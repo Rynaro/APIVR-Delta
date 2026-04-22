@@ -13,6 +13,7 @@ FORCE=false
 DRY_RUN=false
 NON_INTERACTIVE=false
 MANIFEST_ONLY=false
+SHARED_DISPATCH=false
 
 # --- helpers ---
 log()  { echo "  $*"; }
@@ -28,29 +29,34 @@ Usage: bash install.sh [OPTIONS]
 Install the ${METHODOLOGY} v${EIDOLON_VERSION} Eidolon into a consumer project.
 
 Options:
-  --target DIR          Target install dir (default: ${TARGET})
-  --hosts LIST          claude-code,copilot,cursor,opencode,all (default: auto)
-  --force               Overwrite existing install
-  --dry-run             Print actions, no writes
-  --non-interactive     No prompts; fail on ambiguity (meta-installer mode)
-  --manifest-only       Only emit install.manifest.json
-  --version             Print Eidolon version
-  -h, --help            Show help
+  --target DIR            Target install dir (default: ${TARGET})
+  --hosts LIST            claude-code,copilot,cursor,opencode,all (default: auto)
+  --shared-dispatch       Compose marker-bounded section in root AGENTS.md /
+                          CLAUDE.md / .github/copilot-instructions.md (opt-in).
+  --no-shared-dispatch    Skip root dispatch files (default).
+  --force                 Overwrite existing install
+  --dry-run               Print actions, no writes
+  --non-interactive       No prompts; fail on ambiguity (meta-installer mode)
+  --manifest-only         Only emit install.manifest.json
+  --version               Print Eidolon version
+  -h, --help              Show help
 EOF
 }
 
 # --- arg parsing ---
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --target)           TARGET="$2"; shift 2 ;;
-    --hosts)            HOSTS="$2"; shift 2 ;;
-    --force)            FORCE=true; shift ;;
-    --dry-run)          DRY_RUN=true; shift ;;
-    --non-interactive)  NON_INTERACTIVE=true; shift ;;
-    --manifest-only)    MANIFEST_ONLY=true; shift ;;
-    --version)          echo "${EIDOLON_VERSION}"; exit 0 ;;
-    -h|--help)          usage; exit 0 ;;
-    *)                  echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+    --target)               TARGET="$2"; shift 2 ;;
+    --hosts)                HOSTS="$2"; shift 2 ;;
+    --shared-dispatch)      SHARED_DISPATCH=true; shift ;;
+    --no-shared-dispatch)   SHARED_DISPATCH=false; shift ;;
+    --force)                FORCE=true; shift ;;
+    --dry-run)              DRY_RUN=true; shift ;;
+    --non-interactive)      NON_INTERACTIVE=true; shift ;;
+    --manifest-only)        MANIFEST_ONLY=true; shift ;;
+    --version)              echo "${EIDOLON_VERSION}"; exit 0 ;;
+    -h|--help)              usage; exit 0 ;;
+    *)                      echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
   esac
 done
 
@@ -254,17 +260,84 @@ Cycle:     A (Analyze) → P (Plan) → I (Implement) → V (Verify) → Δ (Del
 
 **P0 (non-negotiable):** Internal First (USE → EXTEND → WRAP → CREATE); test-anchored (expected test cases before implementation); boundary-respect (no out-of-scope edits); evidence-based (no speculation); escalate early (3 failures at same category = STOP)."
 
-  # AGENTS.md is the host-agnostic open-standard file; emit unconditionally.
-  upsert_eidolon_block "AGENTS.md" "$SHARED_BLOCK"
+  # --- Per-skill vendor wiring helpers ---
+  strip_frontmatter() {
+    local f="$1"
+    if [[ "$(head -1 "$f")" == "---" ]]; then
+      awk 'NR==1 && /^---$/ {in_fm=1; next}
+           in_fm && /^---$/ {in_fm=0; next}
+           !in_fm {print}' "$f"
+    else
+      cat "$f"
+    fi
+  }
+  extract_fm_field() {
+    awk -v field="$2" '
+      NR==1 && /^---$/ { in_fm=1; next }
+      in_fm && /^---$/ { exit }
+      in_fm { p=index($0, field ":"); if (p==1) { sub("^" field ":[[:space:]]*", ""); print; exit } }
+    ' "$1"
+  }
+  wire_skill() {
+    local src_dir="$1" skill_name="$2"
+    local src_skill="${src_dir}/SKILL.md"
+    [[ -f "$src_skill" ]] || return
+    local description
+    description="$(extract_fm_field "$src_skill" "description")"
+    [[ -z "$description" ]] && description="${skill_name}"
+
+    for h in "${host_list[@]}"; do
+      case "$h" in
+        claude-code)
+          if [[ "$DRY_RUN" == "true" ]]; then
+            act "[dry-run] copy ${src_dir}/ → .claude/skills/${skill_name}/"
+          else
+            rm -rf ".claude/skills/${skill_name}"
+            mkdir -p ".claude/skills/${skill_name}"
+            cp -R "${src_dir}/." ".claude/skills/${skill_name}/"
+            act ".claude/skills/${skill_name}/"
+          fi
+          ;;
+        copilot)
+          if [[ "$DRY_RUN" == "true" ]]; then
+            act "[dry-run] write .github/instructions/${skill_name}.instructions.md"
+          else
+            mkdir -p ".github/instructions"
+            { echo "---"; echo "applyTo: \"**\""; echo "description: \"${description}\""; echo "---"; strip_frontmatter "$src_skill"; } > ".github/instructions/${skill_name}.instructions.md"
+            act ".github/instructions/${skill_name}.instructions.md"
+          fi
+          ;;
+        cursor)
+          if [[ "$DRY_RUN" == "true" ]]; then
+            act "[dry-run] write .cursor/rules/${skill_name}.mdc"
+          else
+            mkdir -p ".cursor/rules"
+            { echo "---"; echo "description: \"${description}\""; echo "alwaysApply: false"; echo "---"; strip_frontmatter "$src_skill"; } > ".cursor/rules/${skill_name}.mdc"
+            act ".cursor/rules/${skill_name}.mdc"
+          fi
+          ;;
+      esac
+    done
+  }
+
+  # Emit per-skill vendor files for every skill directory under skills/.
+  for skill_dir in "${SCRIPT_DIR}"/skills/*/; do
+    [[ -d "$skill_dir" ]] || continue
+    skill_name="$(basename "$skill_dir")"
+    wire_skill "$skill_dir" "${EIDOLON_NAME}-${skill_name}"
+  done
+
+  # AGENTS.md — opt-in shared dispatch only.
+  [[ "$SHARED_DISPATCH" == "true" ]] && upsert_eidolon_block "AGENTS.md" "$SHARED_BLOCK"
 
   for host in "${host_list[@]}"; do
     case "$host" in
 
       claude-code)
         hosts_wired+=("claude-code")
-        upsert_eidolon_block "CLAUDE.md" "$SHARED_BLOCK"
+        [[ "$SHARED_DISPATCH" == "true" ]] && upsert_eidolon_block "CLAUDE.md" "$SHARED_BLOCK"
 
-        # Subagent dispatch — authoritative when claude-code is wired.
+        # Subagent dispatch — always written when claude-code is wired.
         if [[ "$DRY_RUN" == "true" ]]; then
           act "[dry-run] write .claude/agents/${EIDOLON_NAME}.md"
         else
@@ -300,40 +373,20 @@ AGENT
 
       copilot)
         hosts_wired+=("copilot")
-        upsert_eidolon_block ".github/copilot-instructions.md" "$SHARED_BLOCK"
+        [[ "$SHARED_DISPATCH" == "true" ]] && \
+          upsert_eidolon_block ".github/copilot-instructions.md" "$SHARED_BLOCK"
         ;;
 
       cursor)
         hosts_wired+=("cursor")
+        # Per-skill .cursor/rules/apivr-<skill>.mdc already emitted by wire_skill.
+        # Drop the legacy methodology-level apivr.mdc on --force.
         if [[ -d "./.cursor" ]]; then
-          do_mkdir "./.cursor/rules"
-          CURSOR_FILE="./.cursor/rules/${EIDOLON_NAME}.mdc"
-          if [[ -f "$CURSOR_FILE" && "$FORCE" != "true" ]]; then
-            skip "${CURSOR_FILE} exists (pass --force to overwrite)"
-          else
-            do_write "$CURSOR_FILE" "---
-description: APIVR-Δ feature implementation methodology
-globs: [\"**/*\"]
-alwaysApply: false
----
-
-For feature implementation tasks, follow the APIVR-Δ methodology.
-
-Entry point: \`${TARGET_REL}/agent.md\`
-Full spec:   \`${TARGET_REL}/apivr.md\`
-
-Cycle: A (Analyze) → P (Plan) → I (Implement) → V (Verify) → Δ (Delta) / R (Reflect)
-
-Non-negotiable:
-- Internal First: USE → EXTEND → WRAP → CREATE
-- Test-Anchored: Generate test cases BEFORE implementation
-- Escalate Early: 3 failures at same category = STOP
-"
-          fi
-        elif [[ -f "./.cursorrules" ]]; then
-          # Legacy single-file Cursor rules — emit marker-bounded block.
+          [[ -f "./.cursor/rules/${EIDOLON_NAME}.mdc" && "$FORCE" == "true" ]] && \
+            rm -f "./.cursor/rules/${EIDOLON_NAME}.mdc"
+        elif [[ -f "./.cursorrules" && "$SHARED_DISPATCH" == "true" ]]; then
           upsert_eidolon_block ".cursorrules" "$SHARED_BLOCK"
-        else
+        elif [[ ! -d "./.cursor" && ! -f "./.cursorrules" ]]; then
           warn "cursor host requested but neither .cursor/ nor .cursorrules found — skipping"
           hosts_wired=("${hosts_wired[@]/cursor}")
         fi

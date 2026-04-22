@@ -1,3 +1,10 @@
+---
+name: apivr-failure-recovery
+description: "Load when the APIVR-Δ Verify phase produces failures — test fails, lint error, build break, or three consecutive unsuccessful attempts at the same category. Provides the failure classification taxonomy, bounded debugging protocol, and escalation thresholds. Use to avoid the 'random retries' anti-pattern."
+methodology: APIVR-Δ
+methodology_version: "3.0"
+---
+
 # Failure Recovery Skill
 
 Structured failure classification, targeted debugging, and escalation protocols. Loaded when the Verify phase produces failures.

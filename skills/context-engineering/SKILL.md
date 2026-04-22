@@ -1,3 +1,10 @@
+---
+name: apivr-context-engineering
+description: "Load at the start of the APIVR-Δ Analyze phase. Techniques for building a repo map, running progressive disclosure, and maximising context relevance for coding tasks. Use whenever you need to understand unfamiliar code before editing it, or when an existing Discovery Report feels under-grounded."
+methodology: APIVR-Δ
+methodology_version: "3.0"
+---
+
 # Context Engineering Skill
 
 Techniques for maximizing the quality and relevance of information available during coding tasks. The primary constraint on agent performance is not reasoning capability but context quality.
