@@ -14,14 +14,14 @@ Load order for this repository:
 
 ## Consumer project usage
 
-After installing this Eidolon into a consumer project, Claude Code finds the installed agent at `agents/apivr/agent.md`.
+After installing this Eidolon into a consumer project, Claude Code finds the installed agent at `.eidolons/apivr/agent.md`.
 
 To install:
 
 ```bash
-bash install.sh --hosts claude-code --target ./agents/apivr
+bash install.sh --hosts claude-code --target ./.eidolons/apivr
 ```
 
-Claude Code will load `agents/apivr/agent.md` via the `@` pointer added to the consumer's `CLAUDE.md`.
+Claude Code will load `.eidolons/apivr/agent.md` via the `@` pointer added to the consumer's `CLAUDE.md`.
 
 See `INSTALL.md` for full installation instructions and `hosts/claude-code.md` for Claude Code-specific wiring details.

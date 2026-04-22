@@ -5,7 +5,7 @@
 Run from the APIVR-Delta repo root (or wherever you cloned it):
 
 ```bash
-bash install.sh --hosts claude-code --target ./agents/apivr
+bash install.sh --hosts claude-code --target ./.eidolons/apivr
 ```
 
 Or install alongside all detected hosts automatically:
@@ -21,17 +21,17 @@ The installer appends this pointer to your project's `CLAUDE.md` (creating it if
 ```markdown
 ## APIVR-Δ Methodology
 
-@agents/apivr/agent.md
+@.eidolons/apivr/agent.md
 ```
 
-Claude Code will load `agents/apivr/agent.md` at session start. Skills load on demand:
+Claude Code will load `.eidolons/apivr/agent.md` at session start. Skills load on demand:
 
 | Trigger | Load |
 |---|---|
-| Starting Analyze phase | `@agents/apivr/skills/context-engineering.md` |
-| Planning or scoring strategies | `@agents/apivr/skills/apivr-methodology.md` |
-| Test failure, lint error, build break | `@agents/apivr/skills/failure-recovery.md` |
-| Session start/end, repeated pattern | `@agents/apivr/skills/memory-management.md` |
+| Starting Analyze phase | `@.eidolons/apivr/skills/context-engineering.md` |
+| Planning or scoring strategies | `@.eidolons/apivr/skills/apivr-methodology.md` |
+| Test failure, lint error, build break | `@.eidolons/apivr/skills/failure-recovery.md` |
+| Session start/end, repeated pattern | `@.eidolons/apivr/skills/memory-management.md` |
 
 ## 3. Verify
 
@@ -46,8 +46,8 @@ Expected: Agent identifies complexity tier (Trivial/Standard/Complex/Uncertain),
 
 ## 4. Troubleshooting
 
-**Agent ignores methodology**: Confirm `CLAUDE.md` contains the `@agents/apivr/agent.md` line. Run `bash install.sh --force` to re-write.
+**Agent ignores methodology**: Confirm `CLAUDE.md` contains the `@.eidolons/apivr/agent.md` line. Run `bash install.sh --force` to re-write.
 
-**Skills not loading**: Check that `agents/apivr/skills/` was copied. Re-run install with `--dry-run` to confirm file list.
+**Skills not loading**: Check that `.eidolons/apivr/skills/` was copied. Re-run install with `--dry-run` to confirm file list.
 
-**Token budget warning**: `agent.md` must stay ≤1000 tokens. Run `wc -w agents/apivr/agent.md` and divide by 0.75. If over, open an issue.
+**Token budget warning**: `agent.md` must stay ≤1000 tokens. Run `wc -w .eidolons/apivr/agent.md` and divide by 0.75. If over, open an issue.

@@ -17,7 +17,7 @@ A ──▶ P ──▶ I ──▶ V ──┬──▶ Δ (success)
 
 **A**nalyze → **P**lan → **I**mplement → **V**erify → **Δ** Delta / **R** Reflect
 
-Full methodology: `agents/apivr/apivr.md`
+Full methodology: `.eidolons/apivr/apivr.md`
 
 ## Complexity Router
 
@@ -44,21 +44,21 @@ Load on-demand per phase. Do NOT load all skills upfront.
 
 | Trigger | Skill File |
 |---|---|
-| Starting Analyze phase | `agents/apivr/skills/context-engineering.md` |
-| Planning or scoring strategies | `agents/apivr/skills/apivr-methodology.md` |
-| Test failure, lint error, build break | `agents/apivr/skills/failure-recovery.md` |
-| Session start, session end, repeated pattern | `agents/apivr/skills/memory-management.md` |
+| Starting Analyze phase | `.eidolons/apivr/skills/context-engineering.md` |
+| Planning or scoring strategies | `.eidolons/apivr/skills/apivr-methodology.md` |
+| Test failure, lint error, build break | `.eidolons/apivr/skills/failure-recovery.md` |
+| Session start, session end, repeated pattern | `.eidolons/apivr/skills/memory-management.md` |
 
 ## Phase Outputs
 
 | Phase | Required Output | Template |
 |---|---|---|
-| **A** Analyze | Discovery Report | `agents/apivr/templates/discovery-report.md` |
-| **P** Plan | Execution Plan with scored strategies | `agents/apivr/templates/execution-plan.md` |
+| **A** Analyze | Discovery Report | `.eidolons/apivr/templates/discovery-report.md` |
+| **P** Plan | Execution Plan with scored strategies | `.eidolons/apivr/templates/execution-plan.md` |
 | **I** Implement | Code changes + new tests | — |
 | **V** Verify | Pass/Fail evidence (linter, tests, build) | — |
 | **Δ** Delta | Normalization suggestions (output only, never implement) | — |
-| **R** Reflect | Classified failure + fix or escalation | `agents/apivr/templates/reflect-entry.md` |
+| **R** Reflect | Classified failure + fix or escalation | `.eidolons/apivr/templates/reflect-entry.md` |
 
 ## Guardrails
 
@@ -83,6 +83,6 @@ Load on-demand per phase. Do NOT load all skills upfront.
 
 ## Memory
 
-Location: `agents/apivr/memories/`
+Location: `.eidolons/apivr/memories/`
 
-Query memory at the START of every task for: past work in the same module, known patterns, failure history. See `agents/apivr/skills/memory-management.md` for protocol.
+Query memory at the START of every task for: past work in the same module, known patterns, failure history. See `.eidolons/apivr/skills/memory-management.md` for protocol.
