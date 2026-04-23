@@ -1,3 +1,10 @@
+---
+name: apivr-memory-management
+description: "Load at APIVR-Δ session start, session end, or when you notice a repeating pattern across tasks. Reflexion-style episodic memory protocol: read memory before planning; write after Verify and Reflect; consolidate at session end. Use to preserve learned patterns, failure classifications, and delta history across sessions."
+methodology: APIVR-Δ
+methodology_version: "3.0"
+---
+
 # Memory Management Skill
 
 Persistent memory protocols for cross-session learning, task tracking, and pattern recognition. Based on Reflexion-style episodic memory with structured consolidation.
