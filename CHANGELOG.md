@@ -7,6 +7,12 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [3.0.5] - 2026-04-26 — Re-vendor EIIS v1.1 schema (codex enum)
+
+### Fixed
+- `schemas/install.manifest.v1.json` re-vendored from EIIS v1.1 — the previously bundled copy lacked `codex` in the `hosts_wired` enum, causing the EIIS conformance checker's M14 (JSON Schema validation) to fail when a validator (`ajv` / `python -m jsonschema`) was on PATH. Pure schema fix; no install.sh behaviour change.
+- `examples/install.manifest.json` corrected `mode: rewritten` → `mode: overwritten` to match the EIIS v1.1 enum.
+
 ## [3.0.4] — 2026-04-24
 
 ### Added
