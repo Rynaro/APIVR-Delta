@@ -7,6 +7,33 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [3.0.4] — 2026-04-24
+
+### Added
+- `EIIS_VERSION` file declaring conformance to EIIS v1.1 (resolves drift D-6).
+- OpenAI Codex host wiring (EIIS v1.1 §4.5):
+  - `--hosts codex` and `--hosts all` now provision Codex artefacts.
+  - `detect_hosts` recognises `.codex/` directories and root `AGENTS.md`-only
+    projects as Codex signals.
+  - Per-Eidolon Codex subagent file emitted at `.codex/agents/apivr.md` with
+    EIIS-conformant YAML frontmatter (`name: apivr`, `description:` covering
+    APIVR-Δ's brownfield-implementation role) and a body that mirrors the
+    existing Claude Code agent prompt.
+  - Marker-bounded `<!-- eidolon:apivr start --> … <!-- eidolon:apivr end -->`
+    block written to root `AGENTS.md` whenever `codex` is wired (EIIS §4.1.0
+    co-ownership of `AGENTS.md` between `copilot` and `codex`).
+  - `install.manifest.json` records `"codex"` in `hosts_wired` and lists
+    `AGENTS.md` and `.codex/agents/apivr.md` under `files_written` (§4.5.5.1).
+- `examples/install.manifest.json` fixture so the EIIS conformance checker
+  can validate manifest shape statically (resolves M0 advisory).
+
+### References
+- <https://developers.openai.com/codex/guides/agents-md>
+- <https://developers.openai.com/codex/subagents>
+- Tracks `Rynaro/eidolons#21` (OpenAI Codex host support).
+
+---
+
 ## [Unreleased] — EIIS-1.0 conformance
 
 ### Added
