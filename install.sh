@@ -2,7 +2,7 @@
 set -euo pipefail
 
 EIDOLON_NAME="apivr"
-EIDOLON_VERSION="3.0.0"
+EIDOLON_VERSION="3.0.4"
 METHODOLOGY="APIVR-Δ"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -30,7 +30,7 @@ Install the ${METHODOLOGY} v${EIDOLON_VERSION} Eidolon into a consumer project.
 
 Options:
   --target DIR            Target install dir (default: ${TARGET})
-  --hosts LIST            claude-code,copilot,cursor,opencode,all (default: auto)
+  --hosts LIST            claude-code,copilot,cursor,opencode,codex,all (default: auto)
   --shared-dispatch       Compose marker-bounded section in root AGENTS.md /
                           CLAUDE.md / .github/copilot-instructions.md (opt-in).
   --no-shared-dispatch    Skip root dispatch files (default).
@@ -61,12 +61,25 @@ while [[ $# -gt 0 ]]; do
 done
 
 # --- host detection ---
+# EIIS v1.1 §4.5 — `.codex/` is the strongest Codex signal. Root AGENTS.md
+# alone (no `.github/`, no `.codex/`) also indicates Codex. AGENTS.md is
+# co-owned by `copilot` and `codex` when both their signals are present.
 detect_hosts() {
   local detected=()
   [[ -f "CLAUDE.md" || -d ".claude" ]] && detected+=("claude-code")
   [[ -d ".github" ]]                    && detected+=("copilot")
   [[ -d ".cursor" || -f ".cursorrules" ]] && detected+=("cursor")
   [[ -d ".opencode" ]]                  && detected+=("opencode")
+  # Codex signals (EIIS v1.1 §4.1.0, §4.5):
+  #   - `.codex/` directory is the strongest, definitive Codex-only signal.
+  #   - root `AGENTS.md` is the Codex primary instruction surface; co-owned
+  #     with `copilot`. Detect Codex whenever AGENTS.md is present, unless
+  #     `.codex/` already added it.
+  if [[ -d ".codex" ]]; then
+    detected+=("codex")
+  elif [[ -f "AGENTS.md" ]]; then
+    detected+=("codex")
+  fi
   if [[ ${#detected[@]} -eq 0 ]]; then
     printf ""
   else
@@ -75,11 +88,13 @@ detect_hosts() {
 }
 
 if [[ "$HOSTS" == "auto" ]]; then
-  detected_list="$(detect_hosts | paste -sd, || true)"
+  # `paste -sd, -` portable across BSD (macOS) and GNU. Empty stdin yields ""
+  # which we coerce to "none" below.
+  detected_list="$(detect_hosts | paste -sd, - || true)"
   HOSTS="${detected_list:-none}"
   log "Auto-detected hosts: ${HOSTS}"
 elif [[ "$HOSTS" == "all" ]]; then
-  HOSTS="claude-code,copilot,cursor,opencode"
+  HOSTS="claude-code,copilot,cursor,opencode,codex"
 fi
 
 # Relative form of TARGET for @-references and manifest paths (strips leading ./)
@@ -419,6 +434,48 @@ Cycle: A → P → I → V → Δ/R
         fi
         ;;
 
+      codex)
+        # EIIS v1.1 §4.5 — Codex subagent contract.
+        # Two artefacts are written when codex is wired:
+        #   1. Marker-bounded block in root AGENTS.md (§4.1.0; co-owned with
+        #      copilot). This is written regardless of --shared-dispatch
+        #      because AGENTS.md is Codex's primary instruction surface.
+        #   2. Per-Eidolon subagent file at .codex/agents/<name>.md
+        #      (§4.5.1). Filename is the namespace.
+        # Cite: https://developers.openai.com/codex/guides/agents-md
+        # Cite: https://developers.openai.com/codex/subagents
+        hosts_wired+=("codex")
+        upsert_eidolon_block "AGENTS.md" "$SHARED_BLOCK"
+
+        if [[ "$DRY_RUN" == "true" ]]; then
+          act "[dry-run] write .codex/agents/${EIDOLON_NAME}.md"
+        else
+          mkdir -p ".codex/agents"
+          if [[ ! -f ".codex/agents/${EIDOLON_NAME}.md" || "$FORCE" == "true" ]]; then
+            cat > ".codex/agents/${EIDOLON_NAME}.md" <<CODEX_AGENT
+---
+name: ${EIDOLON_NAME}
+description: Brownfield feature implementation subagent — pattern-first, test-anchored, bounded failure recovery (APIVR-Δ A→P→I→V→Δ/R).
+---
+
+# APIVR-Δ — Codex subagent
+
+APIVR-Δ runs the A→P→I→V→Δ/R cycle. Given a spec, it anchors on existing
+patterns, implements in bounded chunks, verifies via the project's test
+suite, and emits a delta/reflection when it completes or hits a bounded
+failure.
+
+Canonical methodology entry point: \`${TARGET_REL}/agent.md\`.
+Full specification: \`${TARGET_REL}/apivr.md\`.
+Skills load on demand — see \`${TARGET_REL}/skills/\`.
+CODEX_AGENT
+            act ".codex/agents/${EIDOLON_NAME}.md"
+          else
+            skip ".codex/agents/${EIDOLON_NAME}.md already exists (use --force to overwrite)"
+          fi
+        fi
+        ;;
+
       none)
         log "No hosts detected or specified. Skipping dispatch wiring."
         ;;
@@ -457,6 +514,16 @@ if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
     sha="$(sha256_file "${TARGET}/${path}" 2>/dev/null || echo "00000000")"
     fw+="{ \"path\": \"${path}\", \"sha256\": \"${sha}\", \"role\": \"${role}\", \"mode\": \"${mode}\" },"
   }
+  # add_fw_cwd <cwd-relative-path> <role> <mode> — record a file written at
+  # the consumer cwd root (e.g. AGENTS.md, .codex/agents/<name>.md) rather
+  # than under TARGET.
+  add_fw_cwd() {
+    local path="$1" role="$2" mode="$3"
+    [[ -f "$path" ]] || return 0
+    local sha
+    sha="$(sha256_file "$path" 2>/dev/null || echo "00000000")"
+    fw+="{ \"path\": \"${path}\", \"sha256\": \"${sha}\", \"role\": \"${role}\", \"mode\": \"${mode}\" },"
+  }
   add_fw "agent.md"                     "entry-point" "created"
   add_fw "apivr.md"                     "spec"        "created"
   add_fw "skills/apivr-methodology.md"  "skill"       "created"
@@ -466,6 +533,18 @@ if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
   add_fw "templates/discovery-report.md" "template"   "created"
   add_fw "templates/execution-plan.md"  "template"    "created"
   add_fw "templates/reflect-entry.md"   "template"    "created"
+
+  # EIIS v1.1 §4.5.5.1 — Codex dispatch artefacts when codex is wired.
+  if [[ ${#hosts_wired[@]} -gt 0 ]]; then
+    for _h in "${hosts_wired[@]}"; do
+      if [[ "$_h" == "codex" ]]; then
+        add_fw_cwd "AGENTS.md"                       "dispatch" "rewritten"
+        add_fw_cwd ".codex/agents/${EIDOLON_NAME}.md" "dispatch" "created"
+        break
+      fi
+    done
+  fi
+
   files_written_json="[${fw%,}]"
 fi
 

@@ -1,0 +1,48 @@
+{
+  "eidolon": "apivr",
+  "version": "3.0.4",
+  "methodology": "APIVR-Δ",
+  "installed_at": "2026-04-24T12:00:00Z",
+  "target": "./.eidolons/apivr",
+  "hosts_wired": ["claude-code", "codex"],
+  "files_written": [
+    {
+      "path": "agent.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "role": "entry-point",
+      "mode": "created"
+    },
+    {
+      "path": "apivr.md",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "role": "spec",
+      "mode": "created"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "role": "dispatch",
+      "mode": "rewritten"
+    },
+    {
+      "path": ".codex/agents/apivr.md",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "role": "dispatch",
+      "mode": "created"
+    }
+  ],
+  "handoffs_declared": {
+    "upstream": [],
+    "downstream": []
+  },
+  "token_budget": {
+    "entry": 420,
+    "working_set_target": 1000
+  },
+  "security": {
+    "reads_repo": true,
+    "reads_network": false,
+    "writes_repo": true,
+    "persists": [".eidolons/apivr/memories/"]
+  }
+}
