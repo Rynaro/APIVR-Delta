@@ -2,7 +2,7 @@
 set -euo pipefail
 
 EIDOLON_NAME="apivr"
-EIDOLON_VERSION="3.0.4"
+EIDOLON_VERSION="3.0.5"
 METHODOLOGY="APIVR-Δ"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

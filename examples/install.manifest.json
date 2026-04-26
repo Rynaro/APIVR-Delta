@@ -1,6 +1,6 @@
 {
   "eidolon": "apivr",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "methodology": "APIVR-Δ",
   "installed_at": "2026-04-24T12:00:00Z",
   "target": "./.eidolons/apivr",
@@ -22,7 +22,7 @@
       "path": "AGENTS.md",
       "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
       "role": "dispatch",
-      "mode": "rewritten"
+      "mode": "overwritten"
     },
     {
       "path": ".codex/agents/apivr.md",
