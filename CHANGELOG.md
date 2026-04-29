@@ -7,6 +7,11 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [Unreleased]
+
+### Added
+- `.github/workflows/release.yml` — adopts the eidolons-nexus release-integrity contract by calling the reusable `Rynaro/eidolons/.github/workflows/eidolon-release-template.yml@main` template. Triggered via `workflow_dispatch` with a SemVer `version` input; the template tags `vX.Y.Z`, builds a source archive, computes `archive_sha256`, generates a GitHub artifact attestation, and publishes a GitHub Release whose `release-manifest.json` is consumed by the nexus's `Roster Intake` workflow. `manifest_sha256` will be `null` for this Eidolon (no `install.manifest.json` is committed at the repo root) — verification reduces to commit + tree + archive + attestation.
+
 ## [3.0.5] - 2026-04-26 — Re-vendor EIIS v1.1 schema (codex enum)
 
 ### Fixed
