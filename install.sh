@@ -2,8 +2,9 @@
 set -euo pipefail
 
 EIDOLON_NAME="apivr"
-EIDOLON_VERSION="3.0.5"
+EIDOLON_VERSION="3.1.0"
 METHODOLOGY="APIVR-Δ"
+ECL_VERSION_VAL="1.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # --- defaults ---
@@ -246,6 +247,8 @@ echo ""
 do_mkdir "${TARGET}"
 do_mkdir "${TARGET}/skills"
 do_mkdir "${TARGET}/templates"
+do_mkdir "${TARGET}/templates/inbound"
+do_mkdir "${TARGET}/schemas"
 do_mkdir "${TARGET}/memories"
 
 if [[ "$MANIFEST_ONLY" != "true" ]]; then
@@ -256,6 +259,20 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   do_cp "${SCRIPT_DIR}/apivr.md"  "${TARGET}/apivr.md"
   do_cp_r "${SCRIPT_DIR}/skills"    "${TARGET}/skills"
   do_cp_r "${SCRIPT_DIR}/templates" "${TARGET}/templates"
+
+  # --- ECL v1.0: copy ECL_VERSION marker ---
+  do_cp "${SCRIPT_DIR}/ECL_VERSION" "${TARGET}/ECL_VERSION"
+
+  # --- ECL v1.0: copy vendored schemas ---
+  do_cp "${SCRIPT_DIR}/schemas/install.manifest.v1.json"                "${TARGET}/schemas/install.manifest.v1.json"
+  do_cp "${SCRIPT_DIR}/schemas/ecl-envelope.v1.json"                    "${TARGET}/schemas/ecl-envelope.v1.json"
+  do_cp "${SCRIPT_DIR}/schemas/_base-profile.v1.json"                   "${TARGET}/schemas/_base-profile.v1.json"
+  do_cp "${SCRIPT_DIR}/schemas/apivr-completion-report-profile.v1.json" "${TARGET}/schemas/apivr-completion-report-profile.v1.json"
+  do_cp "${SCRIPT_DIR}/schemas/repair-failed-report-profile.v1.json"    "${TARGET}/schemas/repair-failed-report-profile.v1.json"
+  do_cp "${SCRIPT_DIR}/schemas/scout-report-profile.v1.json"            "${TARGET}/schemas/scout-report-profile.v1.json"
+  do_cp "${SCRIPT_DIR}/schemas/spec-profile.v1.json"                    "${TARGET}/schemas/spec-profile.v1.json"
+  do_cp "${SCRIPT_DIR}/schemas/root-cause-report-profile.v1.json"       "${TARGET}/schemas/root-cause-report-profile.v1.json"
+  do_cp "${SCRIPT_DIR}/schemas/reasoning-report-profile.v1.json"        "${TARGET}/schemas/reasoning-report-profile.v1.json"
 
   # --- step 3: host dispatch files ---
   echo ""
@@ -530,9 +547,27 @@ if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
   add_fw "skills/context-engineering.md" "skill"      "created"
   add_fw "skills/failure-recovery.md"   "skill"       "created"
   add_fw "skills/memory-management.md"  "skill"       "created"
+  add_fw "skills/verify-incoming/SKILL.md" "skill"    "created"
   add_fw "templates/discovery-report.md" "template"   "created"
   add_fw "templates/execution-plan.md"  "template"    "created"
   add_fw "templates/reflect-entry.md"   "template"    "created"
+  # ECL v1.0 artefacts
+  add_fw "ECL_VERSION"                                        "other"    "created"
+  add_fw "schemas/ecl-envelope.v1.json"                      "other"    "created"
+  add_fw "schemas/_base-profile.v1.json"                     "other"    "created"
+  add_fw "schemas/apivr-completion-report-profile.v1.json"   "other"    "created"
+  add_fw "schemas/repair-failed-report-profile.v1.json"      "other"    "created"
+  add_fw "schemas/scout-report-profile.v1.json"              "other"    "created"
+  add_fw "schemas/spec-profile.v1.json"                      "other"    "created"
+  add_fw "schemas/root-cause-report-profile.v1.json"         "other"    "created"
+  add_fw "schemas/reasoning-report-profile.v1.json"          "other"    "created"
+  add_fw "templates/apivr-completion-report.envelope.json"   "template" "created"
+  add_fw "templates/repair-failed-report.envelope.json"      "template" "created"
+  add_fw "templates/reasoning-request.envelope.json"         "template" "created"
+  add_fw "templates/inbound/scout-report.envelope.fixture.json"      "template" "created"
+  add_fw "templates/inbound/spec.envelope.fixture.json"              "template" "created"
+  add_fw "templates/inbound/root-cause-report.envelope.fixture.json" "template" "created"
+  add_fw "templates/inbound/reasoning-report.envelope.fixture.json"  "template" "created"
 
   # EIIS v1.1 §4.5.5.1 — Codex dispatch artefacts when codex is wired.
   if [[ ${#hosts_wired[@]} -gt 0 ]]; then
@@ -558,11 +593,16 @@ MANIFEST_CONTENT="{
   \"files_written\": ${files_written_json},
   \"handoffs_declared\": {
     \"upstream\": [],
-    \"downstream\": []
+    \"downstream\": [\"idg\"]
   },
   \"token_budget\": {
     \"entry\": 0,
     \"working_set_target\": 1000
+  },
+  \"comm\": {
+    \"envelope_version\": \"${ECL_VERSION_VAL}\",
+    \"emits\": [\"apivr-completion-report\", \"repair-failed-report\", \"reasoning-request\"],
+    \"verifies_incoming\": [\"scout-report\", \"spec\", \"root-cause-report\", \"reasoning-report\"]
   },
   \"security\": {
     \"reads_repo\": true,

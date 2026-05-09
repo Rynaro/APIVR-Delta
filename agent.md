@@ -48,6 +48,7 @@ Load on-demand per phase. Do NOT load all skills upfront.
 | Planning or scoring strategies | `.eidolons/apivr/skills/apivr-methodology.md` |
 | Test failure, lint error, build break | `.eidolons/apivr/skills/failure-recovery.md` |
 | Session start, session end, repeated pattern | `.eidolons/apivr/skills/memory-management.md` |
+| Reading upstream artefact (scout-report, spec, root-cause-report, reasoning-report) | `.eidolons/apivr/skills/verify-incoming/SKILL.md` |
 
 ## Phase Outputs
 
@@ -85,4 +86,8 @@ Load on-demand per phase. Do NOT load all skills upfront.
 
 Location: `.eidolons/apivr/memories/`
 
-Query memory at the START of every task for: past work in the same module, known patterns, failure history. See `.eidolons/apivr/skills/memory-management.md` for protocol.
+Query memory at the START of every task for: past work in the same module, known patterns, failure history, and `ECL_VERSION`. See `.eidolons/apivr/skills/memory-management.md` for protocol.
+
+## ECL
+
+This Eidolon targets ECL v1.0 (see `ECL_VERSION`). It emits three envelope kinds: `apivr-completion-report` (to IDG, Implement phase), `repair-failed-report` (to VIGIL, Reflect phase on 3-failure threshold), and `reasoning-request` (to FORGE, Plan phase consultation). Templates live at `.eidolons/apivr/templates/*.envelope.json`. On inbound artefacts from ATLAS/SPECTRA/VIGIL/FORGE, load the verify-incoming skill if a sibling `.envelope.json` is present.

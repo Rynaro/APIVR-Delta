@@ -275,4 +275,39 @@ When escalating, provide this structured output:
 
 ---
 
+## Escalation Envelope (ECL v1.0)
+
+When the 3-failure-same-category threshold fires, the ESCALATE step MUST emit a `repair-failed-report.envelope.json` next to the failure log. This is the contract APIVR-Δ uses to hand off to VIGIL (`apivr-to-vigil.yaml`).
+
+### Required envelope fields
+
+| Field | Value |
+|---|---|
+| `from.eidolon` | `apivr` |
+| `to.eidolon` | `vigil` |
+| `performative` | `ESCALATE` |
+| `artifact.kind` | `repair-failed-report` |
+| `constraints.trust_level` | `high` |
+| `assumptions[0]` | `"trigger: 3-failure-same-category"` (ECL §2.2.3) |
+
+Use the template at `templates/repair-failed-report.envelope.json`.
+
+### Required payload fields (per `schemas/repair-failed-report-profile.v1.json`)
+
+- `kind: repair-failed-report`
+- `eidolon: apivr`
+- `failure_category` — the bucketed category (`flaky-test`, `dep-missing`, `convention-violation`, etc.)
+- `attempts >= 3` — must be at or above the threshold
+- `last_test_command` — the exact reproduction command
+
+### Integrity
+
+`integrity.method=sha256` and `integrity.value` must equal `shasum -a 256` of the payload bytes at emit time. The receiving VIGIL session uses this to detect tampering or version drift before opening its own investigation.
+
+### Skip when
+
+`ECL_VERSION` is absent in the install root. The escalation still happens — only the envelope sidecar is skipped.
+
+---
+
 *Failure Recovery Skill — evidence-gated, targeted, loop-aware*

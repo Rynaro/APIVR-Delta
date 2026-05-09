@@ -277,4 +277,10 @@ If memory shows:
 
 ---
 
+## ECL_VERSION
+
+When restoring a session, query `ECL_VERSION` (single-line file at the Eidolon install root) alongside the Eidolon version. Drift > 1 minor relative to the consumer's expected envelope version triggers a warning surface — see ECL v1.0 §7.2.
+
+---
+
 *Memory Management Skill — episodic, structured, consolidation-aware*

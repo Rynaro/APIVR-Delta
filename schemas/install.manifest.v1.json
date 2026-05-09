@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Rynaro/eidolons-eiis/blob/v1.0.0/schemas/install.manifest.v1.json",
+  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.1.0/schemas/install.manifest.v1.json",
   "title": "EIIS install.manifest v1",
   "description": "Written by install.sh into <target>/install.manifest.json after a successful install. Defined by EIIS v1.0 §3.",
   "type": "object",
@@ -128,6 +128,35 @@
           "type": "array",
           "items": { "type": "string" },
           "description": "Paths where the Eidolon may persist state (e.g. Memex root)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "comm": {
+      "type": "object",
+      "description": "ECL communication metadata. Present when the Eidolon adopts ECL v1.0+ emission.",
+      "required": ["envelope_version"],
+      "properties": {
+        "envelope_version": {
+          "type": "string",
+          "pattern": "^1\\.0(\\.\\d+)?$",
+          "description": "ECL spec version this Eidolon targets. ECL v1.0 §7.2."
+        },
+        "emits": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "description": "Artefact kinds this Eidolon emits as ECL envelopes."
+        },
+        "verifies_incoming": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "description": "Inbound artefact kinds this Eidolon performs opt-in verification on."
         }
       },
       "additionalProperties": false
