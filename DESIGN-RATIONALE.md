@@ -64,6 +64,44 @@ Research-to-decision mapping for APIVR-Δ v3.0. For the full evidence base with 
 
 ---
 
+---
+
+## ECL adoption — emit + verify-incoming (v3.1.0)
+
+### Why three emit kinds
+
+APIVR-Δ is the highest-volume hand-off node in the Eidolons pipeline. It receives from ATLAS, SPECTRA, VIGIL, and FORGE, and emits to IDG (completion), VIGIL (escalation), and FORGE (consultation). ECL adoption makes these hand-offs machine-checkable: the `apivr-completion-report` envelope tells IDG exactly what was done and verifies payload integrity; the `repair-failed-report` envelope ensures VIGIL receives the 3-failure context with the correct escalation performative and assumption; the `reasoning-request` envelope lets FORGE know the question was generated in the Plan phase by APIVR-Δ.
+
+### [DECISION-1] reasoning-request uses base profile only
+
+The `apivr-to-forge.yaml` contract explicitly sets `schema_ref: ../schemas/per-eidolon/_base-profile.v1.json`. FORGE owns the body shape of consultation requests; APIVR-Δ only needs to satisfy the base frontmatter contract. A dedicated per-Eidolon `reasoning-request` profile is a v1.1 concern (tracked as follow-up F5).
+
+### [DECISION-2] bats test framework
+
+APIVR-Δ had zero test coverage before v3.1.0. The canonical Eidolons test framework is `bats` (used by the nexus, ATLAS v1.5.0, and VIGIL). Rather than introduce a novel framework, we adopt bats and create `tests/` from scratch. The bats suite covers emit conformance, schema round-trips, and the verify-incoming contract. See `tests/` for all files.
+
+### [DECISION-3] EIIS v1.2 bump in a separate PR
+
+Bundling the EIIS v1.2 floor change with the ECL emission PR introduces two axes of change in a single merge. The release workflow at `.github/workflows/release.yml` keeps `eiis-version: "1.1"` for this PR. A separate `chore/eiis-1.2-conformance` PR will bump the EIIS floor and re-vendor the schema. This follows the single-responsibility principle for release notes and roster intake.
+
+### [DECISION-4] verify-incoming is prompt-only
+
+ATLAS v1.5.0 shipped all envelope helpers as prompt-only instructions in `skills/synthesize/SKILL.md`. APIVR-Δ follows the same pattern: `skills/verify-incoming/SKILL.md` describes the validation pipeline in prose for the host LLM to execute. A `bin/verify-incoming.sh` shell helper would require bash runtime assumptions and external tool dependencies (jq) that are not universally available. If the bats suite reveals the prompt-only contract is too loose (e.g., systematic integrity check bypasses), promote to a shell helper in v3.2.0. Tracked as F6.
+
+### Why verify-incoming is warn-only
+
+ECL §0 declares adoption opt-in at v1.0. APIVR-Δ is a receiver, not an authority: refusing a payload because the upstream Eidolon sent a malformed envelope would break the pipeline for users who have not yet adopted ECL. Warn-only posture (log `verify_fail`, emit stderr warning, continue) maximises interoperability during the ECL rollout period. The spec notes this diverges from ECL §6.2.2 ("SHALL NOT process on mismatch") — this is an intentional opt-in degradation documented here per ECL §7.4 drift register.
+
+### Future work
+
+- **F1 — VIGIL adopts ECL v1.0**: Until VIGIL adopts, `repair-failed-report` envelopes are emit-only. VIGIL v1.0.3 has not adopted ECL.
+- **F2 — FORGE adopts ECL v1.0**: Until FORGE adopts, `reasoning-request` envelopes are emit-only and `reasoning-report` inbound verification relies on fixtures only. FORGE v1.2.1 has not adopted ECL.
+- **F3 — EIIS v1.2 conformance**: Tracked as `chore/eiis-1.2-conformance` PR.
+- **F5 — reasoning-request dedicated profile**: ECL v1.1 candidate.
+- **F6 — promote verify-incoming to shell helper**: Only if bats evidence demands it.
+
+---
+
 ## Non-decisions (deliberately out of scope)
 
 - **Vector search for memory**: Regex/keyword search over structured files is sufficient for project-scale memory and avoids infrastructure dependencies (Claude Code observation).

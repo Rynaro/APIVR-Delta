@@ -152,6 +152,10 @@ Document:
 
 **Phase output**: Execution Plan (use `agents/templates/execution-plan.md`)
 
+### ECL emit on FORGE consultation
+
+If Plan-phase reasoning calls for a FORGE consultation (adversarial reasoning, trade-off arbitration), emit a `reasoning-request.envelope.json` next to the question artefact (template at `templates/reasoning-request.envelope.json`). Required: `to.eidolon=forge`, `performative=REQUEST`, `artifact.kind=reasoning-request`. Body validates against `schemas/_base-profile.v1.json`. Skip the envelope when `ECL_VERSION` is absent.
+
 ---
 
 ## I — IMPLEMENT Phase
@@ -205,6 +209,10 @@ Run tests incrementally, not all at once:
 3. Run the broader test suite only after all individual tests pass
 4. This prevents the overcorrection cascade (fixing one thing, breaking another)
 
+### ECL emit on Implement-phase exit
+
+On phase exit, emit `apivr-completion-report.envelope.json` next to the completion artefact (template at `templates/apivr-completion-report.envelope.json`). Required: `to.eidolon=idg`, `performative=PROPOSE`, `artifact.kind=apivr-completion-report`, `integrity.method=sha256` matching the payload bytes. Profile schema: `schemas/apivr-completion-report-profile.v1.json` (required keys: `files_changed_count`, `tests_run`, `tests_passed`). Skip when `ECL_VERSION` is absent.
+
 ---
 
 ## V — VERIFY Phase
@@ -239,6 +247,10 @@ Load skill: `agents/skills/failure-recovery.md`
 - Runtime error with traceback
 
 **No artifacts = ESCALATE immediately.** Do not guess at fixes.
+
+### ECL emit on 3-failure escalation
+
+When the 3-failure-same-category threshold fires, the escalation MUST be wrapped in a `repair-failed-report.envelope.json` (template at `templates/repair-failed-report.envelope.json`). Required: `to.eidolon=vigil`, `performative=ESCALATE`, `trust_level=high`, `assumptions[0]="trigger: 3-failure-same-category"`. Profile schema: `schemas/repair-failed-report-profile.v1.json` (required keys: `attempts>=3`, `failure_category`, `last_test_command`). See `skills/failure-recovery.md` for the full escalation envelope contract. Skip when `ECL_VERSION` is absent.
 
 ### Failure Protocol
 

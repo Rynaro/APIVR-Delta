@@ -9,8 +9,48 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-05-08 — ECL v1.0 emission adoption
+
 ### Added
+- `ECL_VERSION` declaring conformance to ECL v1.0 (`Rynaro/eidolons-ecl@v1.0.0`).
+- Vendored profile schemas for the three emit kinds and four inbound kinds:
+  - `schemas/_base-profile.v1.json` (vendored unchanged)
+  - `schemas/apivr-completion-report-profile.v1.json` (emit, to IDG)
+  - `schemas/repair-failed-report-profile.v1.json` (emit, to VIGIL on 3-failure escalation)
+  - `schemas/scout-report-profile.v1.json`, `schemas/spec-profile.v1.json`, `schemas/root-cause-report-profile.v1.json`, `schemas/reasoning-report-profile.v1.json` (inbound verification)
+- Vendored envelope schema `schemas/ecl-envelope.v1.json` with the performative enum **inlined** at both call sites (matches ATLAS v1.5.0 precedent).
+- Three emit envelope templates under `templates/`: `apivr-completion-report.envelope.json` (PROPOSE → IDG), `repair-failed-report.envelope.json` (ESCALATE → VIGIL, `assumptions[0]="trigger: 3-failure-same-category"`), `reasoning-request.envelope.json` (REQUEST → FORGE).
+- Four inbound smoke fixtures under `templates/inbound/` for the verify-incoming bats suite.
+- New skill `skills/verify-incoming/SKILL.md` — prompt-only validation pipeline (schema → integrity → contract match) with **warn-only** failure semantics.
+- Bats test suite under `tests/`: `helpers.bash`, `install.bats`, `emit-completion-report.bats`, `emit-repair-failed-report.bats`, `emit-reasoning-request.bats`, `verify-incoming.bats`. APIVR-Δ ships its first test coverage.
+- Manifest `comm` block at `install.manifest.json` carrying `envelope_version`, `emits`, and `verifies_incoming`. Schema hand-extended (optional, `additionalProperties: false`).
+- Architectural invariant **I-7 ECL emit at hand-off boundaries** in `apivr.md` §1.
+- New `apivr.md` §7 — ECL Compatibility (emit kinds × phase × profile schema, inbound verification table, compatibility window).
+- `agent.md`: skill-loading row for verify-incoming + ECL section under Memory.
+- `AGENTS.md`: frontmatter `comm.envelope_version`, `comm.emits`, `comm.verifies_incoming`.
+- `DESIGN-RATIONALE.md`: ECL adoption section recording resolutions for [DECISION-1] (reasoning-request uses base profile only), [DECISION-2] (bats framework), [DECISION-3] (EIIS v1.2 bump deferred to a separate PR), [DECISION-4] (verify-incoming is prompt-only). Future work F1–F6 captured.
 - `.github/workflows/release.yml` — adopts the eidolons-nexus release-integrity contract by calling the reusable `Rynaro/eidolons/.github/workflows/eidolon-release-template.yml@main` template. Triggered via `workflow_dispatch` with a SemVer `version` input; the template tags `vX.Y.Z`, builds a source archive, computes `archive_sha256`, generates a GitHub artifact attestation, and publishes a GitHub Release whose `release-manifest.json` is consumed by the nexus's `Roster Intake` workflow. `manifest_sha256` will be `null` for this Eidolon (no `install.manifest.json` is committed at the repo root) — verification reduces to commit + tree + archive + attestation.
+
+### Changed
+- `EIDOLON_VERSION` 3.0.5 → 3.1.0 (additive minor — ECL emission is opt-in per ECL §0).
+- `apivr.md` Version footer 3.0.0 → 3.1.0.
+- `install.sh` ships the eight new schemas, three emit templates, four inbound fixtures, and the verify-incoming skill; declares `ECL_VERSION_VAL="1.0"`; emits `comm.{envelope_version,emits,verifies_incoming}` into `install.manifest.json`.
+
+### Compliance
+- `jq empty schemas/*.json` clean.
+- `shellcheck -x -S error install.sh` clean.
+- Bash 3.2 floor preserved (no `declare -A`, `${var,,}`, `readarray`, `&>>` introduced).
+- Idempotent re-install: manifest byte-identical modulo `installed_at`.
+
+### References
+- ECL v1.0 spec: `Rynaro/eidolons-ecl@v1.0.0` (`spec/ecl-1.0.md`).
+- ATLAS v1.5.0 reference adoption: `Rynaro/ATLAS@31c68f0` (PR #24).
+- Hand-off contracts referenced: `apivr-to-{idg,vigil,forge}.yaml`, `{atlas,spectra,vigil,forge}-to-apivr.yaml`.
+
+### Known follow-ups
+- VIGIL and FORGE have not yet adopted ECL — emit envelopes to those Eidolons are one-way until they do (tracked as F1, F2 in DESIGN-RATIONALE).
+- EIIS v1.2 floor bump bundled in a separate `chore/eiis-1.2-conformance` PR (F3).
+- A dedicated `reasoning-request` profile may be promoted in ECL v1.1 (F5).
 
 ## [3.0.5] - 2026-04-26 — Re-vendor EIIS v1.1 schema (codex enum)
 

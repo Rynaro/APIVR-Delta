@@ -1,12 +1,23 @@
 ---
 name: apivr
-version: 3.0.0
+version: 3.1.0
 methodology: APIVR-Δ
-methodology_version: 3.0.0
+methodology_version: 3.1.0
 role: feature-implementation — Evidence-grounded feature implementation for brownfield codebases
 handoffs:
   upstream:   []
-  downstream: []
+  downstream: [idg]
+comm:
+  envelope_version: "1.0"
+  emits:
+    - apivr-completion-report
+    - repair-failed-report
+    - reasoning-request
+  verifies_incoming:
+    - scout-report
+    - spec
+    - root-cause-report
+    - reasoning-report
 ---
 
 # Feature Implementation Agent
