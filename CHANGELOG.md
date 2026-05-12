@@ -9,6 +9,28 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [3.1.1] — 2026-05-12 — Declare ECL v1.2 conformance
+
+### Changed
+- `ECL_VERSION` file: `1.0` → `1.2`. Targets the latest ECL spec
+  (`Rynaro/eidolons-ecl@v1.2.0`); APIVR-Δ's emit envelopes remain
+  byte-compatible (v1.2 is backward-compatible with v1.0 per ECL §1.1.1).
+- `AGENTS.md` frontmatter: `comm.envelope_version` `"1.0"` → `"1.2"`.
+- `install.sh`: `EIDOLON_VERSION` `3.1.0` → `3.1.1` (PATCH bump —
+  declaration-only change; no behaviour change).
+
+### Notes
+- No envelope-format changes. v1.0 envelopes already emitted by older
+  APIVR-Δ releases are valid under v1.2 conformance.
+- The `repair-failed-report` envelope (apivr → vigil) is `trust_level=high`
+  per `apivr-to-vigil.yaml`. Worked-example smoke tests should use
+  `--integrity-method hmac-sha256` + `ECL_HMAC_KEY` per ECL v1.1 gate
+  I-5 SHOULD recommendation. The apivr-vigil escalation worked example
+  in `eidolons-ecl@v1.1.0` already migrated to HMAC.
+- `verify-incoming` continues to accept `sha256` envelopes from upstream
+  (ATLAS, SPECTRA, VIGIL, FORGE) without warn-mode failure — warn-only
+  semantics preserved.
+
 ## [3.1.0] - 2026-05-08 — ECL v1.0 emission adoption
 
 ### Added
