@@ -8,7 +8,7 @@ handoffs:
   upstream:   []
   downstream: [idg]
 comm:
-  envelope_version: "1.2"
+  envelope_version: "2.0"
   emits:
     - apivr-completion-report
     - repair-failed-report
