@@ -9,6 +9,23 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [3.1.2] — 2026-05-13 — declare ECL v2.0 conformance
+
+### Changed
+- `ECL_VERSION` file: `1.2` → `2.0`. Targets ECL v2.0 spec
+  (`Rynaro/eidolons-ecl@v2.0.0`, spec/ecl-2.0.md introduces ISE trust hierarchy).
+  Declaration-only patch bump; no behaviour change.
+- `AGENTS.md` frontmatter: `comm.envelope_version` `"1.2"` → `"2.0"`.
+- `install.sh`: `EIDOLON_VERSION` `3.1.1` → `3.1.2` (PATCH bump —
+  declaration-only change; no behaviour change, no schema change,
+  no envelope-shape change).
+
+### Notes
+- APIVR-Δ emit envelopes remain byte-compatible with ECL v2.0 (backward-
+  compatible per ECL §7.3 — 12-month window through 2027-05-13).
+- Companion patches: ATLAS v1.5.2 ✓ merged; SPECTRA v4.3.2 ✓ in flight;
+  IDG, FORGE, VIGIL follow. All six Eidolons bump per ECL v2.0.0 publication.
+
 ## [3.1.1] — 2026-05-12 — Declare ECL v1.2 conformance
 
 ### Changed
