@@ -22,7 +22,7 @@ alwaysApply: false
 For feature implementation tasks, follow the APIVR-Δ methodology.
 
 Entry point: `.eidolons/apivr/agent.md`
-Full spec:   `.eidolons/apivr/apivr.md`
+Full spec:   `.eidolons/apivr/SPEC.md`
 
 Cycle: A (Analyze) → P (Plan) → I (Implement) → V (Verify) → Δ (Delta) / R (Reflect)
 

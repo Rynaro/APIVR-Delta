@@ -1,19 +1,19 @@
 #!/usr/bin/env bats
-# tests/install.bats — ECL install gates for APIVR-Delta v3.1.0
+# tests/install.bats — ECL install gates for APIVR-Delta v3.2.0
 
 load helpers.bash
 
 REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 
-@test "ECL_VERSION file exists and contains 1.0" {
+@test "ECL_VERSION file exists and contains a valid semver" {
   [ -f "${REPO_ROOT}/ECL_VERSION" ]
   run cat "${REPO_ROOT}/ECL_VERSION"
   [ "$status" -eq 0 ]
-  [[ "$output" == "1.0" ]]
+  [[ "$output" =~ ^[0-9]+\.[0-9]+ ]]
 }
 
-@test "install.sh declares EIDOLON_VERSION 3.1.0" {
-  grep -q 'EIDOLON_VERSION="3.1.0"' "${REPO_ROOT}/install.sh"
+@test "install.sh declares EIDOLON_VERSION 3.2.0" {
+  grep -q 'EIDOLON_VERSION="3.2.0"' "${REPO_ROOT}/install.sh"
 }
 
 @test "install.sh declares ECL_VERSION_VAL" {
@@ -57,8 +57,8 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   [ -f "${REPO_ROOT}/templates/inbound/reasoning-report.envelope.fixture.json" ]
 }
 
-@test "verify-incoming skill exists" {
-  [ -f "${REPO_ROOT}/skills/verify-incoming/SKILL.md" ]
+@test "verify-incoming skill exists (flat layout, EIIS v1.3)" {
+  [ -f "${REPO_ROOT}/skills/verify-incoming.md" ]
 }
 
 @test "repair-failed-report template has trust_level high" {

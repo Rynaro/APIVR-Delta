@@ -95,7 +95,7 @@ Any tool that reads markdown instruction files can use this system. Point your t
 
 ### Asset Discovery Paths
 
-The methodology references standard paths (e.g., `app/models/DOMAIN/`). Update these in `skills/apivr-methodology.md` → "Asset Discovery" section to match your project structure:
+The methodology references standard paths (e.g., `app/models/DOMAIN/`). Update these in `skills/methodology.md` → "Asset Discovery" section to match your project structure:
 
 ```markdown
 | Asset Type | Search Pattern | Purpose |
@@ -106,7 +106,7 @@ The methodology references standard paths (e.g., `app/models/DOMAIN/`). Update t
 
 ### Scoring Dimensions
 
-The default scoring matrix (Risk, Effort, Alignment, Maintainability) covers most cases. Add domain-specific dimensions in the Plan phase section of `skills/apivr-methodology.md` if needed.
+The default scoring matrix (Risk, Effort, Alignment, Maintainability) covers most cases. Add domain-specific dimensions in the Plan phase section of `skills/methodology.md` if needed.
 
 ### Memory Location
 
