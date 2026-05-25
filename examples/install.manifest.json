@@ -1,9 +1,47 @@
 {
   "eidolon": "apivr",
-  "version": "3.0.5",
+  "version": "3.2.0",
   "methodology": "APIVR-Δ",
-  "installed_at": "2026-04-24T12:00:00Z",
+  "installed_at": "2026-05-25T12:00:00Z",
   "target": "./.eidolons/apivr",
+  "spec_file": ".eidolons/apivr/SPEC.md",
+  "skills": [
+    {
+      "name": "context-engineering",
+      "source_path": ".eidolons/apivr/skills/context-engineering.md",
+      "source_sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+      "vendor_path": ".claude/skills/apivr-context-engineering/SKILL.md",
+      "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000001"
+    },
+    {
+      "name": "failure-recovery",
+      "source_path": ".eidolons/apivr/skills/failure-recovery.md",
+      "source_sha256": "0000000000000000000000000000000000000000000000000000000000000002",
+      "vendor_path": ".claude/skills/apivr-failure-recovery/SKILL.md",
+      "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000002"
+    },
+    {
+      "name": "memory-management",
+      "source_path": ".eidolons/apivr/skills/memory-management.md",
+      "source_sha256": "0000000000000000000000000000000000000000000000000000000000000003",
+      "vendor_path": ".claude/skills/apivr-memory-management/SKILL.md",
+      "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000003"
+    },
+    {
+      "name": "methodology",
+      "source_path": ".eidolons/apivr/skills/methodology.md",
+      "source_sha256": "0000000000000000000000000000000000000000000000000000000000000004",
+      "vendor_path": ".claude/skills/apivr-methodology/SKILL.md",
+      "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000004"
+    },
+    {
+      "name": "verify-incoming",
+      "source_path": ".eidolons/apivr/skills/verify-incoming.md",
+      "source_sha256": "0000000000000000000000000000000000000000000000000000000000000005",
+      "vendor_path": ".claude/skills/apivr-verify-incoming/SKILL.md",
+      "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000005"
+    }
+  ],
   "hosts_wired": ["claude-code", "codex"],
   "files_written": [
     {
@@ -13,9 +51,39 @@
       "mode": "created"
     },
     {
-      "path": "apivr.md",
+      "path": "SPEC.md",
       "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
       "role": "spec",
+      "mode": "created"
+    },
+    {
+      "path": "skills/context-engineering.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+      "role": "skill",
+      "mode": "created"
+    },
+    {
+      "path": "skills/failure-recovery.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000002",
+      "role": "skill",
+      "mode": "created"
+    },
+    {
+      "path": "skills/memory-management.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000003",
+      "role": "skill",
+      "mode": "created"
+    },
+    {
+      "path": "skills/methodology.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000004",
+      "role": "skill",
+      "mode": "created"
+    },
+    {
+      "path": "skills/verify-incoming.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000005",
+      "role": "skill",
       "mode": "created"
     },
     {
@@ -33,11 +101,16 @@
   ],
   "handoffs_declared": {
     "upstream": [],
-    "downstream": []
+    "downstream": ["idg"]
   },
   "token_budget": {
     "entry": 420,
     "working_set_target": 1000
+  },
+  "comm": {
+    "envelope_version": "1.0",
+    "emits": ["apivr-completion-report", "repair-failed-report", "reasoning-request"],
+    "verifies_incoming": ["scout-report", "spec", "root-cause-report", "reasoning-report"]
   },
   "security": {
     "reads_repo": true,
