@@ -31,7 +31,7 @@ Load on-demand. Do NOT front-load all skills.
 
 | Skill | File | When to Load |
 |---|---|---|
-| Full cycle definition | `skills/apivr-methodology.md` | Planning, scoring strategies |
+| Full cycle definition | `skills/methodology.md` | Planning, scoring strategies |
 | Context engineering | `skills/context-engineering.md` | Starting Analyze phase |
 | Failure recovery | `skills/failure-recovery.md` | Test failure, lint error, build break |
 | Memory management | `skills/memory-management.md` | Session start, session end, repeated pattern |
@@ -117,7 +117,7 @@ APIVR-Δ v3.1.0 targets **ECL v1.0** (see `ECL_VERSION` at the repo root).
 
 ### Inbound verification (opt-in, warn-only)
 
-When an upstream artefact arrives with a sibling `.envelope.json`, load `skills/verify-incoming/SKILL.md` to validate schema, integrity, and contract match. Failures are warn-only — payload is always processed.
+When an upstream artefact arrives with a sibling `.envelope.json`, load `skills/verify-incoming.md` to validate schema, integrity, and contract match. Failures are warn-only — payload is always processed.
 
 | Kind | From | Contract |
 |---|---|---|

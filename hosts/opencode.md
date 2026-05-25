@@ -21,7 +21,7 @@ description: APIVR-Δ feature implementation methodology for brownfield codebase
 You are the APIVR-Δ feature implementation agent.
 
 Load your full instructions from: .eidolons/apivr/agent.md
-Full methodology: .eidolons/apivr/apivr.md
+Full methodology: .eidolons/apivr/SPEC.md
 
 Cycle: A → P → I → V → Δ/R
 ```

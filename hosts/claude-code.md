@@ -29,7 +29,7 @@ Claude Code will load `.eidolons/apivr/agent.md` at session start. Skills load o
 | Trigger | Load |
 |---|---|
 | Starting Analyze phase | `@.eidolons/apivr/skills/context-engineering.md` |
-| Planning or scoring strategies | `@.eidolons/apivr/skills/apivr-methodology.md` |
+| Planning or scoring strategies | `@.eidolons/apivr/skills/methodology.md` |
 | Test failure, lint error, build break | `@.eidolons/apivr/skills/failure-recovery.md` |
 | Session start/end, repeated pattern | `@.eidolons/apivr/skills/memory-management.md` |
 

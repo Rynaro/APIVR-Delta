@@ -58,7 +58,7 @@ If you prefer not to use the script, copy files manually:
 ```bash
 mkdir -p .eidolons/apivr
 cp agent.md       .eidolons/apivr/agent.md
-cp apivr.md       .eidolons/apivr/apivr.md
+cp SPEC.md        .eidolons/apivr/SPEC.md
 cp -r skills/     .eidolons/apivr/skills/
 cp -r templates/  .eidolons/apivr/templates/
 mkdir -p .eidolons/apivr/memories
