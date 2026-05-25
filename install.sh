@@ -2,7 +2,8 @@
 set -euo pipefail
 
 EIDOLON_NAME="apivr"
-EIDOLON_VERSION="3.1.2"
+EIDOLON_SLUG="apivr"
+EIDOLON_VERSION="3.2.0"
 METHODOLOGY="APIVR-Δ"
 ECL_VERSION_VAL="1.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -256,8 +257,7 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   # --- step 2: copy methodology files ---
   echo "Copying methodology files..."
   do_cp "${SCRIPT_DIR}/agent.md"  "${TARGET}/agent.md"
-  do_cp "${SCRIPT_DIR}/apivr.md"  "${TARGET}/apivr.md"
-  do_cp_r "${SCRIPT_DIR}/skills"    "${TARGET}/skills"
+  do_cp "${SCRIPT_DIR}/SPEC.md"   "${TARGET}/SPEC.md"
   do_cp_r "${SCRIPT_DIR}/templates" "${TARGET}/templates"
 
   # --- ECL v1.0: copy ECL_VERSION marker ---
@@ -287,77 +287,59 @@ if [[ "$MANIFEST_ONLY" != "true" ]]; then
   SHARED_BLOCK="## APIVR-Δ — Brownfield feature implementation (v${EIDOLON_VERSION})
 
 Entry:     \`${TARGET_REL}/agent.md\`
-Full spec: \`${TARGET_REL}/apivr.md\`
+Full spec: \`${TARGET_REL}/SPEC.md\`
 Cycle:     A (Analyze) → P (Plan) → I (Implement) → V (Verify) → Δ (Delta) / R (Reflect)
 
 **P0 (non-negotiable):** Internal First (USE → EXTEND → WRAP → CREATE); test-anchored (expected test cases before implementation); boundary-respect (no out-of-scope edits); evidence-based (no speculation); escalate early (3 failures at same category = STOP)."
 
-  # --- Per-skill vendor wiring helpers ---
-  strip_frontmatter() {
-    local f="$1"
-    if [[ "$(head -1 "$f")" == "---" ]]; then
-      awk 'NR==1 && /^---$/ {in_fm=1; next}
-           in_fm && /^---$/ {in_fm=0; next}
-           !in_fm {print}' "$f"
+  # --- wire_skill: dual-write a skill file (EIIS v1.3 §4.2.4 / spec §3.0) ---
+  #
+  # wire_skill <skill_name>
+  #
+  # Dual-writes a skill file:
+  #   - source-of-truth: ${TARGET}/skills/<skill_name>.md
+  #   - vendor copy:     .claude/skills/${EIDOLON_SLUG}-<skill_name>/SKILL.md
+  #
+  # Source file resolved as: ${SCRIPT_DIR}/skills/<skill_name>.md
+  #
+  # Records both files in the manifest with role "skill" and matching SHA-256.
+  # Bash 3.2 compatible (no associative arrays, no ${var,,}, no readarray).
+  wire_skill() {
+    local skill="$1"
+    local src="${SCRIPT_DIR}/skills/${skill}.md"
+    local dst_src="${TARGET}/skills/${skill}.md"
+    local dst_vendor=".claude/skills/${EIDOLON_SLUG}-${skill}/SKILL.md"
+
+    if [[ ! -f "${src}" ]]; then
+      die "skill source not found: ${src}"
+    fi
+
+    mkdir -p "$(dirname "${dst_src}")"
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+      act "[dry-run] cp ${src} → ${dst_src}"
     else
-      cat "$f"
+      cp "${src}" "${dst_src}"
+      act "${dst_src}"
+    fi
+
+    if printf '%s\n' "${HOSTS}" | grep -q 'claude-code'; then
+      mkdir -p "$(dirname "${dst_vendor}")"
+      if [[ "$DRY_RUN" == "true" ]]; then
+        act "[dry-run] cp ${src} → ${dst_vendor}"
+      else
+        cp "${src}" "${dst_vendor}"
+        act "${dst_vendor}"
+      fi
     fi
   }
-  extract_fm_field() {
-    awk -v field="$2" '
-      NR==1 && /^---$/ { in_fm=1; next }
-      in_fm && /^---$/ { exit }
-      in_fm { p=index($0, field ":"); if (p==1) { sub("^" field ":[[:space:]]*", ""); print; exit } }
-    ' "$1"
-  }
-  wire_skill() {
-    local src_dir="$1" skill_name="$2"
-    local src_skill="${src_dir}/SKILL.md"
-    [[ -f "$src_skill" ]] || return
-    local description
-    description="$(extract_fm_field "$src_skill" "description")"
-    [[ -z "$description" ]] && description="${skill_name}"
 
-    for h in "${host_list[@]}"; do
-      case "$h" in
-        claude-code)
-          if [[ "$DRY_RUN" == "true" ]]; then
-            act "[dry-run] copy ${src_dir}/ → .claude/skills/${skill_name}/"
-          else
-            rm -rf ".claude/skills/${skill_name}"
-            mkdir -p ".claude/skills/${skill_name}"
-            cp -R "${src_dir}/." ".claude/skills/${skill_name}/"
-            act ".claude/skills/${skill_name}/"
-          fi
-          ;;
-        copilot)
-          if [[ "$DRY_RUN" == "true" ]]; then
-            act "[dry-run] write .github/instructions/${skill_name}.instructions.md"
-          else
-            mkdir -p ".github/instructions"
-            { echo "---"; echo "applyTo: \"**\""; echo "description: \"${description}\""; echo "---"; strip_frontmatter "$src_skill"; } > ".github/instructions/${skill_name}.instructions.md"
-            act ".github/instructions/${skill_name}.instructions.md"
-          fi
-          ;;
-        cursor)
-          if [[ "$DRY_RUN" == "true" ]]; then
-            act "[dry-run] write .cursor/rules/${skill_name}.mdc"
-          else
-            mkdir -p ".cursor/rules"
-            { echo "---"; echo "description: \"${description}\""; echo "alwaysApply: false"; echo "---"; strip_frontmatter "$src_skill"; } > ".cursor/rules/${skill_name}.mdc"
-            act ".cursor/rules/${skill_name}.mdc"
-          fi
-          ;;
-      esac
-    done
-  }
-
-  # Emit per-skill vendor files for every skill directory under skills/.
-  for skill_dir in "${SCRIPT_DIR}"/skills/*/; do
-    [[ -d "$skill_dir" ]] || continue
-    skill_name="$(basename "$skill_dir")"
-    wire_skill "$skill_dir" "${EIDOLON_NAME}-${skill_name}"
-  done
+  # Emit per-skill files for all 5 skills (flat layout, EIIS v1.3 §4.2.4.3).
+  wire_skill "context-engineering"
+  wire_skill "failure-recovery"
+  wire_skill "memory-management"
+  wire_skill "methodology"
+  wire_skill "verify-incoming"
 
   # AGENTS.md — opt-in shared dispatch only.
   [[ "$SHARED_DISPATCH" == "true" ]] && upsert_eidolon_block "AGENTS.md" "$SHARED_BLOCK"
@@ -393,7 +375,7 @@ suite, and emits a delta/reflection when it completes or hits a bounded
 failure.
 
 See \`${TARGET}/agent.md\` for the P0 rules and
-\`${TARGET}/apivr.md\` for the full specification. Skills load on
+\`${TARGET}/SPEC.md\` for the full specification. Skills load on
 demand — see \`${TARGET}/skills/\`.
 AGENT
             act ".claude/agents/${EIDOLON_NAME}.md"
@@ -440,7 +422,7 @@ description: APIVR-Δ feature implementation methodology for brownfield codebase
 You are the APIVR-Δ feature implementation agent.
 
 Load your full instructions from: ${TARGET_REL}/agent.md
-Full methodology: ${TARGET_REL}/apivr.md
+Full methodology: ${TARGET_REL}/SPEC.md
 
 Cycle: A → P → I → V → Δ/R
 "
@@ -483,7 +465,7 @@ suite, and emits a delta/reflection when it completes or hits a bounded
 failure.
 
 Canonical methodology entry point: \`${TARGET_REL}/agent.md\`.
-Full specification: \`${TARGET_REL}/apivr.md\`.
+Full specification: \`${TARGET_REL}/SPEC.md\`.
 Skills load on demand — see \`${TARGET_REL}/skills/\`.
 CODEX_AGENT
             act ".codex/agents/${EIDOLON_NAME}.md"
@@ -521,8 +503,9 @@ else
   hosts_wired_json="[]"
 fi
 
-# Build files_written array (only if not dry-run)
+# Build files_written array and skills[] array (only if not dry-run)
 files_written_json="[]"
+skills_json="[]"
 if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
   fw=""
   add_fw() {
@@ -541,13 +524,37 @@ if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
     sha="$(sha256_file "$path" 2>/dev/null || echo "00000000")"
     fw+="{ \"path\": \"${path}\", \"sha256\": \"${sha}\", \"role\": \"${role}\", \"mode\": \"${mode}\" },"
   }
-  add_fw "agent.md"                     "entry-point" "created"
-  add_fw "apivr.md"                     "spec"        "created"
-  add_fw "skills/apivr-methodology.md"  "skill"       "created"
-  add_fw "skills/context-engineering.md" "skill"      "created"
-  add_fw "skills/failure-recovery.md"   "skill"       "created"
-  add_fw "skills/memory-management.md"  "skill"       "created"
-  add_fw "skills/verify-incoming/SKILL.md" "skill"    "created"
+  add_fw "agent.md"                        "entry-point" "created"
+  add_fw "SPEC.md"                         "spec"        "created"
+  add_fw "skills/context-engineering.md"   "skill"       "created"
+  add_fw "skills/failure-recovery.md"      "skill"       "created"
+  add_fw "skills/memory-management.md"     "skill"       "created"
+  add_fw "skills/methodology.md"           "skill"       "created"
+  add_fw "skills/verify-incoming.md"       "skill"       "created"
+
+  # Build skills[] EIIS v1.3 §4.2.4 dual-write records.
+  sk=""
+  add_skill() {
+    local name="$1"
+    # source_path must match ^\\.eidolons/<slug>/skills/<skill>.md (EIIS v1.3 §4.2.4).
+    # TARGET_REL strips the leading "./" so it is already ".eidolons/apivr".
+    local src_path="${TARGET_REL}/skills/${name}.md"
+    local vendor_path=".claude/skills/${EIDOLON_SLUG}-${name}/SKILL.md"
+    local src_sha vendor_sha
+    src_sha="$(sha256_file "${TARGET}/skills/${name}.md" 2>/dev/null || echo "00000000")"
+    if printf '%s\n' "${HOSTS}" | grep -q 'claude-code' && [[ -f "${vendor_path}" ]]; then
+      vendor_sha="$(sha256_file "${vendor_path}" 2>/dev/null || echo "00000000")"
+      sk+="{ \"name\": \"${name}\", \"source_path\": \"${src_path}\", \"source_sha256\": \"${src_sha}\", \"vendor_path\": \"${vendor_path}\", \"vendor_sha256\": \"${vendor_sha}\" },"
+    else
+      sk+="{ \"name\": \"${name}\", \"source_path\": \"${src_path}\", \"source_sha256\": \"${src_sha}\" },"
+    fi
+  }
+  add_skill "context-engineering"
+  add_skill "failure-recovery"
+  add_skill "memory-management"
+  add_skill "methodology"
+  add_skill "verify-incoming"
+  skills_json="[${sk%,}]"
   add_fw "templates/discovery-report.md" "template"   "created"
   add_fw "templates/execution-plan.md"  "template"    "created"
   add_fw "templates/reflect-entry.md"   "template"    "created"
@@ -589,6 +596,8 @@ MANIFEST_CONTENT="{
   \"methodology\": \"${METHODOLOGY}\",
   \"installed_at\": \"${INSTALLED_AT}\",
   \"target\": \"${TARGET}\",
+  \"spec_file\": \"${TARGET_REL}/SPEC.md\",
+  \"skills\": ${skills_json},
   \"hosts_wired\": ${hosts_wired_json},
   \"files_written\": ${files_written_json},
   \"handoffs_declared\": {

@@ -9,6 +9,28 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [3.2.0] — 2026-05-25 — EIIS v1.3 install layout normalization
+
+### Changed
+- BREAKING: full-spec destination renamed `apivr.md` → `SPEC.md` (EIIS v1.3 §1.8). Source file also renamed.
+- BREAKING: skills layout flattened from `skills/<skill>/SKILL.md` (subdir) to `skills/<skill>.md` (flat). Vendor copies at `.claude/skills/apivr-<skill>/SKILL.md` unchanged.
+- Skill slug `apivr-methodology` source corrected to `methodology.md` (vendor path `apivr-methodology/SKILL.md` unchanged for host compatibility).
+- `install.sh`: `EIDOLON_VERSION` bumped `3.1.2` → `3.2.0` (MINOR — layout breaking change).
+- `agent.md`: skill path `apivr-methodology.md` → `methodology.md`; `verify-incoming/SKILL.md` → `verify-incoming.md`; spec ref `apivr.md` → `SPEC.md`.
+- `CLAUDE.md`: updated load order to reflect renamed files.
+
+### Fixed
+- Manifest entries for skills now record the on-disk paths with correct SHA-256 (was recording flat paths that did not exist, producing `00000000` SHAs — FINDING-A02/GAP-2).
+- `agent.md` skill path references now resolve to actual installed files.
+
+### Added
+- Manifest now includes `spec_file` field (`.eidolons/apivr/SPEC.md`) per EIIS v1.3 §1.8.
+- Manifest now includes `skills[]` array with dual-write records per EIIS v1.3 §4.2.4.
+- `EIDOLON_SLUG` variable in `install.sh` for `wire_skill` helper.
+
+### Compliance
+- `EIIS_VERSION` bumped from `1.1` to `1.3`.
+
 ## [3.1.2] — 2026-05-13 — declare ECL v2.0 conformance
 
 ### Changed

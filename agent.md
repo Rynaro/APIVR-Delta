@@ -17,7 +17,7 @@ A ──▶ P ──▶ I ──▶ V ──┬──▶ Δ (success)
 
 **A**nalyze → **P**lan → **I**mplement → **V**erify → **Δ** Delta / **R** Reflect
 
-Full methodology: `.eidolons/apivr/apivr.md`
+Full methodology: `.eidolons/apivr/SPEC.md`
 
 ## Complexity Router
 
@@ -45,10 +45,10 @@ Load on-demand per phase. Do NOT load all skills upfront.
 | Trigger | Skill File |
 |---|---|
 | Starting Analyze phase | `.eidolons/apivr/skills/context-engineering.md` |
-| Planning or scoring strategies | `.eidolons/apivr/skills/apivr-methodology.md` |
+| Planning or scoring strategies | `.eidolons/apivr/skills/methodology.md` |
 | Test failure, lint error, build break | `.eidolons/apivr/skills/failure-recovery.md` |
 | Session start, session end, repeated pattern | `.eidolons/apivr/skills/memory-management.md` |
-| Reading upstream artefact (scout-report, spec, root-cause-report, reasoning-report) | `.eidolons/apivr/skills/verify-incoming/SKILL.md` |
+| Reading upstream artefact (scout-report, spec, root-cause-report, reasoning-report) | `.eidolons/apivr/skills/verify-incoming.md` |
 
 ## Phase Outputs
 
