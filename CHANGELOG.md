@@ -9,6 +9,34 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [3.3.0] — 2026-05-26 — EIIS v1.4 canonical inventory conformance
+
+### Changed
+- Declares EIIS v1.4 conformance (`EIIS_VERSION = 1.4`).
+- `.claude/agents/apivr.md` heredoc rewritten per EIIS v1.4 §4.2.6: references
+  both `./.eidolons/apivr/agent.md` (P0 rules) and `./.eidolons/apivr/SPEC.md`
+  (full spec); legacy `apivr.md` reference removed; adds `model: sonnet`.
+- `agent.md` role in `files_written[]` changed: `entry-point` → `agent-profile`
+  (EIIS v1.4 §1.8.6).
+- `ECL_VERSION` role in `files_written[]` changed: `other` → `ecl-version`
+  (EIIS v1.4 §3.7.1).
+
+### Added
+- `canonical_inventory_sweep()` helper in `install.sh`: manifest-driven sweep
+  removes any file under `<target>/` not in the current `files_written[]` allow-set
+  (EIIS v1.4 §6.X). Called after all writes, before manifest finalisation.
+  Belt-and-braces with the existing early `cleanup_legacy_v1_2` call.
+- `FILES_WRITTEN_PATHS` indexed array in `install.sh` (bash 3.2 compatible):
+  tracks target-relative paths written this run for use by the sweep.
+- `schemas/install.manifest.v1.json` is now explicitly tracked in `files_written[]`
+  with `role: "other"` (was written to disk but not recorded in previous versions).
+- Manifest field `canonical_inventory_strict: true` (EIIS v1.4 §2.3).
+- Schema: `role` enum extended with `"agent-profile"` and `"ecl-version"` values.
+- Schema: `canonical_inventory_strict` optional boolean field added.
+
+### Compliance
+- `EIIS_VERSION` bumped from `1.3` to `1.4`.
+
 ## [3.2.1] — 2026-05-26
 
 ### Fixed
