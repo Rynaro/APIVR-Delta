@@ -1,10 +1,11 @@
 {
   "eidolon": "apivr",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "methodology": "APIVR-Δ",
-  "installed_at": "2026-05-25T12:00:00Z",
+  "installed_at": "2026-05-26T12:00:00Z",
   "target": "./.eidolons/apivr",
   "spec_file": ".eidolons/apivr/SPEC.md",
+  "canonical_inventory_strict": true,
   "skills": [
     {
       "name": "context-engineering",
@@ -47,13 +48,19 @@
     {
       "path": "agent.md",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-      "role": "entry-point",
+      "role": "agent-profile",
       "mode": "created"
     },
     {
       "path": "SPEC.md",
       "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
       "role": "spec",
+      "mode": "created"
+    },
+    {
+      "path": "ECL_VERSION",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "role": "ecl-version",
       "mode": "created"
     },
     {
@@ -84,6 +91,12 @@
       "path": "skills/verify-incoming.md",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000005",
       "role": "skill",
+      "mode": "created"
+    },
+    {
+      "path": "schemas/install.manifest.v1.json",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "role": "other",
       "mode": "created"
     },
     {
