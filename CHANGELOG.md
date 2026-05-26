@@ -9,6 +9,14 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [3.2.1] — 2026-05-26
+
+### Fixed
+- `install.sh` now sweeps legacy v1.2-era artefacts on upgrade: removes stale
+  `<TARGET>/apivr.md` and any `<TARGET>/skills/{context-engineering,failure-recovery,memory-management,methodology,verify-incoming}/`
+  subdir trees left behind by pre-v1.3 installs. Fresh installs are unaffected
+  (every guard short-circuits on a clean target).
+
 ## [3.2.0] — 2026-05-25 — EIIS v1.3 install layout normalization
 
 ### Changed

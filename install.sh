@@ -3,10 +3,21 @@ set -euo pipefail
 
 EIDOLON_NAME="apivr"
 EIDOLON_SLUG="apivr"
-EIDOLON_VERSION="3.2.0"
+EIDOLON_VERSION="3.2.1"
 METHODOLOGY="APIVR-Δ"
 ECL_VERSION_VAL="1.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Legacy v1.2-era artefacts swept by cleanup_legacy_v1_2 on upgrade.
+# Strategy A (hardcoded per-Eidolon list) — see install-cleanup-v1.3.1-spec §2.
+LEGACY_SPEC_FILES=( "apivr.md" )
+LEGACY_SKILL_DIRS=( \
+  "context-engineering" \
+  "failure-recovery" \
+  "memory-management" \
+  "methodology" \
+  "verify-incoming" \
+)
 
 # --- defaults ---
 TARGET="./.eidolons/${EIDOLON_NAME}"
@@ -237,6 +248,46 @@ upsert_eidolon_block() {
   rm -f "$content_file"
 }
 
+# cleanup_legacy_v1_2 <target>
+#
+# Sweep legacy v1.2-era artefacts left behind by prior installs.
+# Called exactly once, early in the install sequence, BEFORE any new content
+# is written under <target>. Idempotent: no-op when no legacy file exists.
+#
+# Reads two top-of-file arrays:
+#   LEGACY_SPEC_FILES  — basenames to rm -f at "<target>/<basename>"
+#   LEGACY_SKILL_DIRS  — skill names to rm -rf at "<target>/skills/<name>"
+#
+# Both arrays are declared per-Eidolon and MAY be empty (in which case
+# the corresponding loop is a no-op). Never reads/writes outside <target>.
+cleanup_legacy_v1_2() {
+  local target="$1"
+  local legacy
+  local legacy_skill_dir
+
+  if [ -z "${target}" ] || [ ! -d "${target}" ]; then
+    return 0
+  fi
+
+  # Sweep legacy spec filenames (e.g. apivr.md)
+  for legacy in "${LEGACY_SPEC_FILES[@]}"; do
+    if [ -n "${legacy}" ] && [ -f "${target}/${legacy}" ]; then
+      rm -f "${target}/${legacy}"
+      log "[cleanup] swept legacy spec file: ${target}/${legacy}"
+    fi
+  done
+
+  # Sweep legacy subdir-style skills (e.g. skills/methodology/SKILL.md)
+  for legacy_skill_dir in "${LEGACY_SKILL_DIRS[@]}"; do
+    if [ -n "${legacy_skill_dir}" ] && [ -d "${target}/skills/${legacy_skill_dir}" ]; then
+      rm -rf "${target}/skills/${legacy_skill_dir}"
+      log "[cleanup] swept legacy skill subdir: ${target}/skills/${legacy_skill_dir}"
+    fi
+  done
+
+  return 0
+}
+
 # ===== MAIN =====
 
 echo ""
@@ -253,6 +304,9 @@ do_mkdir "${TARGET}/schemas"
 do_mkdir "${TARGET}/memories"
 
 if [[ "$MANIFEST_ONLY" != "true" ]]; then
+
+  # --- step 1b: sweep legacy v1.2-era artefacts (before any content write) ---
+  cleanup_legacy_v1_2 "${TARGET}"
 
   # --- step 2: copy methodology files ---
   echo "Copying methodology files..."
