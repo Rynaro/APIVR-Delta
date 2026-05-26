@@ -74,9 +74,11 @@
               "template",
               "dispatch",
               "manifest",
+              "agent-profile",
+              "ecl-version",
               "other"
             ],
-            "description": "Semantic role of this file in the Eidolon install."
+            "description": "Semantic role of this file in the Eidolon install. 'agent-profile' and 'ecl-version' added in EIIS v1.4."
           },
           "mode": {
             "enum": ["created", "appended", "overwritten"],
@@ -165,6 +167,10 @@
       "type": "string",
       "pattern": "^\\.eidolons/[a-z][a-z0-9-]*/SPEC\\.md$",
       "description": "Canonical full-spec path (EIIS v1.3 §1.8). MUST point at the SPEC.md emitted by this install."
+    },
+    "canonical_inventory_strict": {
+      "type": "boolean",
+      "description": "v1.4+. When true, this install declares §1.9 strict-inventory conformance (EIIS v1.4). Default behaviour at EIIS_VERSION >= 1.4 is true."
     },
     "skills": {
       "type": "array",

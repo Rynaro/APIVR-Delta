@@ -3,7 +3,7 @@ set -euo pipefail
 
 EIDOLON_NAME="apivr"
 EIDOLON_SLUG="apivr"
-EIDOLON_VERSION="3.2.1"
+EIDOLON_VERSION="3.3.0"
 METHODOLOGY="APIVR-Δ"
 ECL_VERSION_VAL="1.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -288,6 +288,56 @@ cleanup_legacy_v1_2() {
   return 0
 }
 
+# canonical_inventory_sweep <target>
+#
+# EIIS v1.4 §6.X — manifest-driven install-target cleanup.
+# Remove every file under <target>/ that is not present in the in-memory
+# allow-set FILES_WRITTEN_PATHS. Called once, AFTER all content writes and
+# BEFORE install.manifest.json is finalized. Idempotent: no-op on a clean
+# target. Emits an info log line for each swept file.
+#
+# Requires FILES_WRITTEN_PATHS (indexed array) to be populated by the caller
+# via add_fw() calls during the install. Each entry is a target-relative path
+# (e.g. "SPEC.md") or a cwd-relative path (e.g. ".eidolons/apivr/SPEC.md").
+#
+# Bash 3.2 compatible: indexed array, no associative arrays, no readarray.
+canonical_inventory_sweep() {
+  local target="$1"
+  local file_rel
+  local found
+  local known
+
+  if [ -z "${target}" ] || [ ! -d "${target}" ]; then
+    return 0
+  fi
+
+  # Walk every file under <target>/; for each, test membership in the allow-set.
+  find "${target}" -type f -print0 | while IFS= read -r -d '' file; do
+    # Compute the target-relative path (strip "${target}/" prefix).
+    file_rel="${file#${target}/}"
+
+    found=0
+    for known in "${FILES_WRITTEN_PATHS[@]}"; do
+      case "${known}" in
+        *"/${file_rel}"|"${file_rel}")
+          found=1
+          break
+          ;;
+      esac
+    done
+
+    if [ "${found}" -eq 0 ]; then
+      rm -f "${file}"
+      log "[sweep] removed non-whitelisted file: ${file}"
+    fi
+  done
+
+  # Remove any empty directories left after the sweep.
+  find "${target}" -mindepth 1 -type d -empty -delete 2>/dev/null || true
+
+  return 0
+}
+
 # ===== MAIN =====
 
 echo ""
@@ -414,9 +464,10 @@ Cycle:     A (Analyze) → P (Plan) → I (Implement) → V (Verify) → Δ (Del
             cat > ".claude/agents/${EIDOLON_NAME}.md" <<AGENT
 ---
 name: ${EIDOLON_NAME}
-description: "Brownfield feature implementation — pattern-first, test-anchored, bounded failure recovery."
+description: "APIVR-Δ Acceptance-Probe + Iterative Verification Reviewer — brownfield feature implementation, pattern-first, test-anchored, bounded failure recovery."
 when_to_use: "After a SPECTRA spec exists (or an equivalent human-authored brief) and you need to implement a feature in an existing codebase with an established convention set."
 tools: Read, Edit, Write, Grep, Glob, Bash(git:*), Bash(rspec:*), Bash(jest:*), Bash(pytest:*), Bash(go test:*)
+model: sonnet
 methodology: ${METHODOLOGY}
 methodology_version: "${EIDOLON_VERSION%.*}"
 role: Coder — bounded implementer with test/pattern anchoring
@@ -428,9 +479,9 @@ patterns, implements in bounded chunks, verifies via the project's test
 suite, and emits a delta/reflection when it completes or hits a bounded
 failure.
 
-See \`${TARGET}/agent.md\` for the P0 rules and
-\`${TARGET}/SPEC.md\` for the full specification. Skills load on
-demand — see \`${TARGET}/skills/\`.
+See \`./.eidolons/${EIDOLON_SLUG}/agent.md\` for the P0 rules and
+\`./.eidolons/${EIDOLON_SLUG}/SPEC.md\` for the full specification. Skills load on
+demand — see \`./.eidolons/${EIDOLON_SLUG}/skills/\`.
 AGENT
             act ".claude/agents/${EIDOLON_NAME}.md"
           else
@@ -560,6 +611,9 @@ fi
 # Build files_written array and skills[] array (only if not dry-run)
 files_written_json="[]"
 skills_json="[]"
+# FILES_WRITTEN_PATHS — indexed array of target-relative paths written this run.
+# Consumed by canonical_inventory_sweep (EIIS v1.4 §6.X) after all writes.
+FILES_WRITTEN_PATHS=()
 if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
   fw=""
   add_fw() {
@@ -567,6 +621,8 @@ if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
     local sha
     sha="$(sha256_file "${TARGET}/${path}" 2>/dev/null || echo "00000000")"
     fw+="{ \"path\": \"${path}\", \"sha256\": \"${sha}\", \"role\": \"${role}\", \"mode\": \"${mode}\" },"
+    # Track for canonical_inventory_sweep allow-set.
+    FILES_WRITTEN_PATHS+=("${path}")
   }
   # add_fw_cwd <cwd-relative-path> <role> <mode> — record a file written at
   # the consumer cwd root (e.g. AGENTS.md, .codex/agents/<name>.md) rather
@@ -577,9 +633,10 @@ if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
     local sha
     sha="$(sha256_file "$path" 2>/dev/null || echo "00000000")"
     fw+="{ \"path\": \"${path}\", \"sha256\": \"${sha}\", \"role\": \"${role}\", \"mode\": \"${mode}\" },"
+    # cwd-relative paths are NOT under TARGET; do not add to FILES_WRITTEN_PATHS.
   }
-  add_fw "agent.md"                        "entry-point" "created"
-  add_fw "SPEC.md"                         "spec"        "created"
+  add_fw "agent.md"                        "agent-profile" "created"
+  add_fw "SPEC.md"                         "spec"          "created"
   add_fw "skills/context-engineering.md"   "skill"       "created"
   add_fw "skills/failure-recovery.md"      "skill"       "created"
   add_fw "skills/memory-management.md"     "skill"       "created"
@@ -613,7 +670,9 @@ if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
   add_fw "templates/execution-plan.md"  "template"    "created"
   add_fw "templates/reflect-entry.md"   "template"    "created"
   # ECL v1.0 artefacts
-  add_fw "ECL_VERSION"                                        "other"    "created"
+  # ECL_VERSION role is "ecl-version" per EIIS v1.4 §3.7.1 (was "other" at v1.3).
+  add_fw "ECL_VERSION"                                        "ecl-version" "created"
+  add_fw "schemas/install.manifest.v1.json"                   "other"    "created"
   add_fw "schemas/ecl-envelope.v1.json"                      "other"    "created"
   add_fw "schemas/_base-profile.v1.json"                     "other"    "created"
   add_fw "schemas/apivr-completion-report-profile.v1.json"   "other"    "created"
@@ -641,6 +700,15 @@ if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
     done
   fi
 
+  # install.manifest.json is itself a whitelisted file; add to allow-set
+  # before the sweep so the manifest is never removed by the sweep.
+  FILES_WRITTEN_PATHS+=("install.manifest.json")
+
+  # EIIS v1.4 §6.X — manifest-driven sweep: remove any file under TARGET/
+  # that is not in FILES_WRITTEN_PATHS. Belt-and-braces with cleanup_legacy_v1_2
+  # (which already ran early). This sweep is the normative EIIS v1.4 gate.
+  canonical_inventory_sweep "${TARGET}"
+
   files_written_json="[${fw%,}]"
 fi
 
@@ -651,6 +719,7 @@ MANIFEST_CONTENT="{
   \"installed_at\": \"${INSTALLED_AT}\",
   \"target\": \"${TARGET}\",
   \"spec_file\": \"${TARGET_REL}/SPEC.md\",
+  \"canonical_inventory_strict\": true,
   \"skills\": ${skills_json},
   \"hosts_wired\": ${hosts_wired_json},
   \"files_written\": ${files_written_json},
