@@ -305,6 +305,9 @@ do_mkdir "${TARGET}/memories"
 
 if [[ "$MANIFEST_ONLY" != "true" ]]; then
 
+  # --- step 1b: sweep legacy v1.2-era artefacts (before any content write) ---
+  cleanup_legacy_v1_2 "${TARGET}"
+
   # --- step 2: copy methodology files ---
   echo "Copying methodology files..."
   do_cp "${SCRIPT_DIR}/agent.md"  "${TARGET}/agent.md"
