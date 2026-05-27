@@ -9,6 +9,10 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [3.3.1] — 2026-05-27
+
+- Patch: migrate evals/canary-missions.md to nexus v1.13.0 DSL format (smoke-default + plan-routing missions). Legacy free-form catalog preserved.
+
 ## [3.3.0] — 2026-05-26 — EIIS v1.4 canonical inventory conformance
 
 ### Changed
