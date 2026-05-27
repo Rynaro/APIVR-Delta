@@ -1,6 +1,69 @@
-# APIVR-Δ Canary Missions
+# Canary Missions — APIVR-Δ
 
-Smoke tests for each major phase. Paste each prompt verbatim into your host. Evaluate against the pass criteria.
+> v1.13.0 DSL-format missions for `eidolons canary apivr`. Legacy free-form
+> missions preserved under "Legacy mission catalog (pre-DSL)" below.
+
+---
+
+## Mission: smoke-default
+
+### Prompt
+
+You are the APIVR-Δ implementation agent. Complexity classification: **Standard**.
+
+> Task: Add an `is_archived` boolean flag to the `Product` model. Archived products should be hidden from the public catalog but visible in the admin panel.
+
+Assume a typical Rails application. Walk through all five phases (Analyze → Plan → Implement → Verify → Reflect) at the **outline level**. Do NOT write code — describe what each phase produces, what assets are discovered, what test anchors are generated, and what the Reflect entry would look like if Verify failed.
+
+### Expected output shape
+
+A response with five phase sections. The Analyze section describes a Discovery Report listing relevant assets (controllers, models, views) and a collision map. The Plan section evaluates at least three strategies with scoring (Risk + Effort + Alignment + Maintainability) and generates test anchors (T1, T2, T3) BEFORE implementation steps. The Implement section references discovered assets using USE / EXTEND / WRAP / CREATE labels. The Verify section describes pass / fail evidence sources (test suite, lint, build). The Reflect section describes the failure-classification protocol and the conditions under which the agent escalates rather than retrying.
+
+### Validation criteria
+
+- MUST contain heading: `## Analyze`
+- MUST contain heading: `## Plan`
+- MUST contain heading: `## Implement`
+- MUST contain heading: `## Verify`
+- MUST contain phrase: `Discovery Report`
+- MUST contain phrase: `test anchors?`
+- MUST contain phrase: `USE|EXTEND|WRAP|CREATE`
+- SHOULD contain phrase: `Reflect`
+- SHOULD contain phrase: `escalat`
+- SHOULD have token count between 1000 and 3500
+
+---
+
+## Mission: plan-routing
+
+### Prompt
+
+You are the APIVR-Δ agent. Classify the following task and route it through the complexity router:
+
+> Task: Fix a typo in the error message returned by the login controller. File: `app/controllers/sessions_controller.rb`, line 47. The string `"Invlid credentials"` should read `"Invalid credentials"`.
+
+State the complexity tier, the route (Plan / no-Plan), the test anchors (if any), and the implementation step. Do NOT actually edit code — describe what the agent would do.
+
+### Expected output shape
+
+A short response that classifies the task as Trivial, explicitly skips the Plan phase, and proceeds directly to a single-line implementation description plus a verification note. The agent does not generate an Execution Plan or score strategies for a trivial task — the response explicitly states that the Plan phase is skipped per the complexity router.
+
+### Validation criteria
+
+- MUST contain phrase: `Trivial`
+- MUST contain phrase: `[Ss]kip.*[Pp]lan`
+- MUST mention paths: `app/controllers/sessions_controller.rb`
+- SHOULD contain phrase: `complexity`
+- SHOULD have token count between 300 and 1500
+
+---
+
+## Legacy mission catalog (pre-DSL)
+
+> The original five free-form missions ("Analyze Phase", "Plan Phase",
+> "Implement Phase", "Verify / Reflect Phase", "Full Cycle") are preserved
+> below as historical reference. The v1.13.0 validator parses only the
+> `## Mission: <id>` blocks above.
 
 ---
 
