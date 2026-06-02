@@ -82,11 +82,26 @@ Load on-demand per phase. Do NOT load all skills upfront.
 - Retry the same approach more than twice
 - Modify test fixtures to make tests pass
 
-## Memory
+## Memory pre-flight (mission intake)
 
-Location: `.eidolons/apivr/memories/`
+Before any phase work begins, recall relevant prior context via CRYSTALIUM
+(if `mcp__crystalium__*` tools are available):
 
-Query memory at the START of every task for: past work in the same module, known patterns, failure history, and `ECL_VERSION`. See `.eidolons/apivr/skills/memory-management.md` for protocol.
+```
+mcp__crystalium__recall(
+  scope  = { project: <cwd-project>, agent_class_visibility: "apivr" },
+  query  = <task goal + domain + module area>,
+  k      = 8,
+  layers = ["semantic", "episodic", "procedural"]
+)
+```
+
+**Graceful skip:** if CRYSTALIUM is not installed, fall back to querying
+`agents/memories/` (task-log, failure-catalog, pattern-registry).
+
+See `.eidolons/apivr/skills/memory-management.md` for the full
+CRYSTALIUM-primary / local-fallback protocol, phase hooks (plan_checkpoint,
+skill_invoke, ingest, session_end), and the reconciliation mapping.
 
 ## ECL
 

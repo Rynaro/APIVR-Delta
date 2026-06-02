@@ -11,6 +11,37 @@ Opt-in incoming envelope verification for APIVR-Δ v3.1. When a handoff artefact
 
 ---
 
+## Memory: Recall + Ingest (CRYSTALIUM)
+
+When receiving an upstream handoff, first recall related prior context (if
+CRYSTALIUM available):
+
+```
+mcp__crystalium__recall(
+  scope  = { project: <cwd-project>, agent_class_visibility: "apivr" },
+  query  = <artefact GOAL + from.eidolon + artifact.kind>,
+  k      = 5,
+  layers = ["semantic", "episodic", "procedural"]
+)
+```
+
+Fold relevant hits into context before running the validation pipeline.
+
+After the validation pipeline passes (`verify_pass`), ingest the received
+envelope to record the inbound edge:
+
+```
+mcp__crystalium__ingest(
+  envelope = <received .envelope.json contents>,
+  payload  = <artefact payload contents>
+)
+```
+
+**Graceful skip:** if `mcp__crystalium__*` tools are unavailable, skip both
+calls silently and proceed with the standard validation pipeline.
+
+---
+
 ## Trigger
 
 Load this skill automatically when:
