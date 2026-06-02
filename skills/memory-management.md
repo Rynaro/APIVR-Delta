@@ -1,17 +1,216 @@
 ---
 name: apivr-memory-management
-description: "Load at APIVR-Δ session start, session end, or when you notice a repeating pattern across tasks. Reflexion-style episodic memory protocol: read memory before planning; write after Verify and Reflect; consolidate at session end. Use to preserve learned patterns, failure classifications, and delta history across sessions."
+description: "Load at APIVR-Δ session start, session end, or when you notice a repeating pattern across tasks. CRYSTALIUM-primary memory protocol: when mcp__crystalium__* tools are available, route ALL memory through CRYSTALIUM (recall/commit/ingest/plan_checkpoint/session_end). The local agents/memories/*.md files are the standalone fallback for when CRYSTALIUM is absent — EIIS conformance. Never write both."
 methodology: APIVR-Δ
-methodology_version: "3.0"
+methodology_version: "3.4"
 ---
 
 # Memory Management Skill
 
-Persistent memory protocols for cross-session learning, task tracking, and pattern recognition. Based on Reflexion-style episodic memory with structured consolidation.
+**Primary rule:** If `mcp__crystalium__*` tools are available, route all memory
+through CRYSTALIUM. The local `agents/memories/*.md` files are the standalone
+fallback for when CRYSTALIUM is absent (EIIS conformance — APIVR-Δ works
+uninstalled). **Never write to both in the same session.**
+
+See `methodology/cortex/memory-protocol.md` (nexus) for the full
+layer × tier matrix, Dream consolidation knobs, and `plan_checkpoint`/
+`plan_replan` semantics.
 
 ---
 
-## Memory Architecture
+## Routing Decision (run once at session start)
+
+```
+IF mcp__crystalium__recall is callable
+  → CRYSTALIUM path (§ CRYSTALIUM Protocol below)
+ELSE
+  → Local-file path (§ Standalone Fallback below)
+```
+
+---
+
+## CRYSTALIUM Protocol (when installed)
+
+**Trust tier:** T1 (set process-wide via `CRYSTALIUM_CALLER_TIER=T1`).
+`author_agent` MUST be `"apivr"` on every direct `commit` call.
+
+### Session Start — Memory Recall (A-ANALYZE Step 1)
+
+```
+mcp__crystalium__recall(
+  scope  = { project: <cwd-project>, agent_class_visibility: "apivr" },
+  query  = <task goal + domain + module area>,
+  k      = 8,
+  layers = ["semantic", "episodic", "procedural"]
+)
+```
+
+- `episodic` — past task outcomes in the same domain
+- `semantic` — known failure root causes, architectural decisions, conventions
+- `procedural` — verified reusable skills for this task type
+
+Fold relevant hits into mission context (≤ 1-2K tokens summarized).
+
+### Plan Phase — Checkpoint + Replan
+
+After the Execution Plan is produced (P-PLAN phase output):
+
+```
+mcp__crystalium__plan_checkpoint(
+  plan_id  = <task-slug + date, e.g. "add-widget-search-2026-06-01">,
+  state    = <full execution plan snapshot including scope, strategy, steps>,
+  step     = "initial",
+  metadata = { author_agent: "apivr", task_title: <title> }
+)
+```
+
+Returns a `checkpoint_id`. Store it in the working execution plan context.
+
+If the plan is revised mid-cycle (methodology abort rules — "stop and return to
+Plan" — fire at I-IMPLEMENT or V-VERIFY):
+
+```
+mcp__crystalium__plan_replan(
+  plan_id            = <same plan_id>,
+  from_checkpoint_id = <checkpoint_id>,
+  new_plan           = { diff: <what changed and why>, supersedes_id: <checkpoint_id> }
+)
+```
+
+This records the branch decision before the revised plan is executed, keeping
+the execution history auditable.
+
+### Implement Phase — Skill Reuse + Procedural Commit
+
+**Before building:** if recall surfaced a procedural entry (verified skill) for
+this task type, invoke it:
+
+```
+mcp__crystalium__skill_invoke(
+  skill_id = <procedural entry id from recall>,
+  context  = <current task context>
+)
+```
+
+Use the `result` to short-circuit re-derivation. Do NOT auto-promote the
+`skill_invoke` result — commit a summary if it proves valuable (see Reflect below).
+
+**After verifying a new reusable pattern:** if a skill-class discovery is made
+and passes Verify:
+
+```
+mcp__crystalium__commit(
+  layer   = "procedural",
+  payload = <verified skill description: what, where, how to use>,
+  provenance = { author_agent: "apivr", quality: "verified" }
+)
+```
+
+Unverified patterns → `layer = "semantic"` with a `quality: candidate` tag.
+
+### Verify Phase — Ingest Completion Report (V-VERIFY / I-exit)
+
+After the `apivr-completion-report.envelope.json` ECL envelope is produced and
+the payload is verified:
+
+```
+mcp__crystalium__ingest(
+  envelope = <apivr-completion-report.envelope.json contents>,
+  payload  = <completion report contents>
+)
+```
+
+This records the handoff at T1 with full ECL provenance (`from.eidolon=apivr`
+drives tier derivation; `integrity.value` stored as `provenance.content_hash`).
+
+### Reflect / Delta Phase — Episodic + Semantic Commits + Session End
+
+After the task completes (Δ-DELTA success path) or exhausts retries (R-REFLECT
+escalation path):
+
+**Task outcome:**
+```
+mcp__crystalium__commit(
+  layer   = "episodic",
+  payload = {
+    task_title:    <title>,
+    domain:        <module/area>,
+    outcome:       "SUCCESS" | "PARTIAL" | "FAILED" | "ESCALATED",
+    summary:       <one sentence>,
+    key_decisions: <what was chosen and why>,
+    lesson:        <one takeaway>
+  },
+  provenance = { author_agent: "apivr" }
+)
+```
+
+**If failures occurred (root cause):**
+```
+mcp__crystalium__commit(
+  layer   = "semantic",
+  payload = {
+    failure_category: <taxonomy category>,
+    context:          <what was being done>,
+    root_cause:       <what went wrong>,
+    prevention:       <how to avoid in future>,
+    domain:           <area/module>
+  },
+  provenance = { author_agent: "apivr" }
+)
+```
+
+**If new patterns discovered:**
+```
+mcp__crystalium__commit(
+  layer   = "procedural",  # or "semantic" if unverified
+  payload = {
+    pattern_name: <name>,
+    location:     <file:line or directory>,
+    type:         <Model | Service | Component | Utility | Convention | Architecture>,
+    purpose:      <what it does>,
+    usage_hint:   <one line>,
+    quality:      "verified" | "candidate"
+  },
+  provenance = { author_agent: "apivr" }
+)
+```
+
+**Session end (once per task completion):**
+```
+mcp__crystalium__session_end()
+```
+
+This triggers Dream consolidation asynchronously. Dream handles dedup,
+promotion, and stale-removal automatically — do NOT hand-consolidate when
+CRYSTALIUM is present.
+
+**Graceful skip:** if any `mcp__crystalium__*` call fails or the tool is
+unavailable, fall through to the Standalone Fallback path silently. Never
+hard-fail.
+
+---
+
+## CRYSTALIUM call → local-file mapping
+
+| APIVR-Δ local protocol | CRYSTALIUM call (when installed) |
+|---|---|
+| Session-Start: read task-log/failure-catalog/pattern-registry/session-handoff | `recall(scope, query, k, layers=[semantic, episodic, procedural])` |
+| Session-End: update task-log.md (outcome) | `commit(layer=episodic, provenance={author_agent:"apivr"})` |
+| Session-End: update failure-catalog.md (root cause/prevention) | `commit(layer=semantic, provenance={author_agent:"apivr"})` |
+| Session-End: update pattern-registry.md (reusable asset/pattern) | `commit(layer=procedural, ...)` (verified) or `layer=semantic` (candidate) |
+| Write session-handoff.md | `plan_checkpoint(state=<plan snapshot incl. scope>)` |
+| Revise plan mid-cycle | `plan_replan(diff={...,supersedes_id})` |
+| Manual Memory Consolidation | **Dream consolidation — automatic via `session_end`**; do NOT hand-consolidate when CRYSTALIUM present |
+| Memory Query Patterns | `recall` with appropriate `query`/`layers` |
+
+---
+
+## Standalone Fallback (when CRYSTALIUM absent)
+
+Use when `mcp__crystalium__*` tools are unavailable. The local Reflexion
+protocol is fully independent — APIVR-Δ is EIIS-standalone-conformant.
+
+### Memory Architecture
 
 ```
 agents/memories/
@@ -22,13 +221,7 @@ agents/memories/
 └── session-handoff.md   # Checkpoint for session boundaries
 ```
 
-Each file has a defined schema, size cap, and consolidation strategy.
-
----
-
-## Session Start Protocol
-
-At the beginning of every coding session:
+### Session Start Protocol
 
 ```
 1. Read task-log.md — scan last 5-10 entries for:
@@ -52,15 +245,11 @@ At the beginning of every coding session:
    - Team conventions discovered in past sessions
 ```
 
-**Budget**: Memory recall should take ≤ 1-2K tokens of context. Summarize, do not paste entire files.
+**Budget**: Memory recall should take ≤ 1-2K tokens of context.
 
----
+### Session End Protocol
 
-## Session End Protocol
-
-At the end of every session (or before context would be lost):
-
-### Update Task Log
+#### Update Task Log
 
 Add entry to `agents/memories/task-log.md`:
 
@@ -74,7 +263,7 @@ Add entry to `agents/memories/task-log.md`:
 - **Lesson**: [one takeaway for future tasks]
 ```
 
-### Update Failure Catalog (if failures occurred)
+#### Update Failure Catalog (if failures occurred)
 
 Add entry to `agents/memories/failure-catalog.md`:
 
@@ -88,7 +277,7 @@ Add entry to `agents/memories/failure-catalog.md`:
 - **Domain**: [area/module for searchability]
 ```
 
-### Update Pattern Registry (if new patterns discovered)
+#### Update Pattern Registry (if new patterns discovered)
 
 Add entry to `agents/memories/pattern-registry.md`:
 
@@ -102,7 +291,7 @@ Add entry to `agents/memories/pattern-registry.md`:
 - **Discovered**: [date]
 ```
 
-### Write Session Handoff (if work is incomplete)
+#### Write Session Handoff (if work is incomplete)
 
 Write to `agents/memories/session-handoff.md`:
 
@@ -116,11 +305,10 @@ Write to `agents/memories/session-handoff.md`:
 
 ### Completed Steps
 1. [step] — done
-2. [step] — done
 
 ### Remaining Steps
-3. [step] — next
-4. [step] — blocked on [reason]
+2. [step] — next
+3. [step] — blocked on [reason]
 
 ### Key State
 - Files modified: [list]
@@ -132,11 +320,7 @@ Write to `agents/memories/session-handoff.md`:
 - [Important constraint discovered during work]
 ```
 
----
-
-## Memory Consolidation
-
-### When to Consolidate
+### Memory Consolidation (standalone only)
 
 Run consolidation when any memory file exceeds its cap:
 
@@ -148,52 +332,16 @@ Run consolidation when any memory file exceeds its cap:
 | delta-history.md | 20 entries | Remove implemented suggestions, archive rejected ones |
 | session-handoff.md | 1 entry | Overwrite on each session end (always current) |
 
-### Consolidation Rules
-
-```
-1. Recency bias: Recent entries are always more valuable than old ones
-2. Frequency matters: Patterns seen 3+ times get promoted to "key patterns"
-3. Stale removal: Entries referencing files that no longer exist → archive
-4. Dedup by root cause: Multiple failures with same root cause → single entry with count
-5. Never delete silently: Move to an "archived" section, don't delete
-```
-
-### Example Consolidation (Task Log)
-
-Before:
-```
-### 2025-12-01 — Add widget search
-- Domain: widgets
-- Outcome: SUCCESS
-- Summary: Added text search to widget list
-...
-
-### 2025-12-03 — Add widget filters
-- Domain: widgets
-- Outcome: SUCCESS
-- Summary: Added date and status filters
-...
-
-### 2025-12-05 — Fix widget sort
-- Domain: widgets
-- Outcome: SUCCESS
-- Summary: Fixed sort order on widget list
-```
-
-After consolidation:
-```
-### Widgets Module — Summary (Dec 2025)
-- 3 tasks completed (all SUCCESS)
-- Added: text search, date/status filters, sort fix
-- Key assets: WidgetQuery (app/models/widgets/queries/), WidgetListComponent
-- Lesson: WidgetQuery handles all list filtering; extend it rather than adding controller logic
-```
+**Note:** When CRYSTALIUM is present, Dream consolidation handles dedup,
+promotion, and pruning automatically. Do NOT run the manual consolidation
+protocol above when CRYSTALIUM is installed.
 
 ---
 
-## In-Session Task Tracking
+## In-Session Task Tracking (both paths)
 
-During implementation, maintain a structured task list in your working context:
+During implementation, maintain a structured task list in working context
+regardless of which memory path is active:
 
 ```markdown
 ## Active Task: [title]
@@ -201,59 +349,13 @@ Phase: IMPLEMENT (step 3 of 5)
 
 ### Progress
 - [x] TASK-1: Discover existing assets — DONE
-  - Found: WidgetRepository, WidgetQuery, WidgetFactory
 - [x] TASK-2: Write test anchors — DONE
-  - 4 test cases in spec/models/widget/search_spec.rb
 - [ ] TASK-3: Extend WidgetQuery with #search_by_text — IN PROGRESS
-  - Using existing #base_scope pattern
 - [ ] TASK-4: Add controller action — PENDING
 - [ ] TASK-5: Run full verification suite — PENDING
-
-### Blockers
-- None currently
-
-### Decisions Made
-- Using WidgetQuery#search_by_text over raw SQL (Internal First principle)
-- Following existing pattern from OrderQuery#search (see pattern-registry)
 ```
 
-**Re-inject this checklist** after every tool use / verification cycle to prevent losing track.
-
----
-
-## Memory Query Patterns
-
-### Finding Relevant Past Work
-
-```
-Query: "Have I worked on [module/domain] before?"
-Search: task-log.md for domain matches
-Return: Last 3 entries + any consolidated summary
-
-Query: "What assets exist in [domain]?"
-Search: pattern-registry.md for domain/location matches
-Return: All matching entries with locations
-
-Query: "Have I seen this error before?"
-Search: failure-catalog.md for error category + domain matches
-Return: Matching entries with prevention strategies
-
-Query: "Were there improvement suggestions for [area]?"
-Search: delta-history.md for domain matches
-Return: Open suggestions with scores
-```
-
-### Memory-Informed Decisions
-
-Use memory to shortcut the APIVR-Δ cycle:
-
-```
-If memory shows:
-  - Same asset used successfully before → Skip re-evaluation, USE directly
-  - Known failure pattern in area → Add extra verification step
-  - Previous Delta suggestion applies → Consider implementing as part of current task
-  - Past escalation in same area → Lower confidence threshold, escalate earlier
-```
+**Re-inject this checklist** after every tool use / verification cycle.
 
 ---
 
@@ -262,10 +364,10 @@ If memory shows:
 ### What NOT to Store
 
 - Exact code snippets (they go stale; store patterns and locations)
-- Speculative conclusions ("this might be useful" — record only validated patterns)
-- Emotional commentary ("this code is terrible" — record objective quality assessment)
+- Speculative conclusions (record only validated patterns)
+- Emotional commentary (record objective quality assessments)
 - Raw error logs (store classified root causes, not full stack traces)
-- Information about files that have been deleted or heavily refactored
+- Information about deleted or heavily refactored files
 
 ### What ALWAYS to Store
 
@@ -273,14 +375,16 @@ If memory shows:
 - Failure root causes with prevention strategies (avoid repeating mistakes)
 - Architectural decisions with rationale (institutional knowledge)
 - Asset discovery results (reduces future Analyze phase time)
-- Team conventions that aren't documented elsewhere
+- Team conventions not documented elsewhere
 
 ---
 
 ## ECL_VERSION
 
-When restoring a session, query `ECL_VERSION` (single-line file at the Eidolon install root) alongside the Eidolon version. Drift > 1 minor relative to the consumer's expected envelope version triggers a warning surface — see ECL v1.0 §7.2.
+When restoring a session, query `ECL_VERSION` alongside the Eidolon version.
+Drift > 1 minor relative to the consumer's expected envelope version triggers
+a warning surface — see ECL v2.0 §7.2.
 
 ---
 
-*Memory Management Skill — episodic, structured, consolidation-aware*
+*Memory Management Skill — CRYSTALIUM-primary, local-file fallback, Dream-aware*

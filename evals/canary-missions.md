@@ -58,6 +58,67 @@ A short response that classifies the task as Trivial, explicitly skips the Plan 
 
 ---
 
+## Mission: memory-round-trip
+
+### Prompt
+
+You are the APIVR-Δ implementation agent. CRYSTALIUM memory tools
+(`mcp__crystalium__recall`, `mcp__crystalium__plan_checkpoint`,
+`mcp__crystalium__ingest`, `mcp__crystalium__commit`,
+`mcp__crystalium__session_end`) are available.
+
+Task: **Standard** — Add a `is_featured` boolean flag to the `Article` model.
+Featured articles should appear in a promoted section on the homepage.
+
+Walk through the APIVR-Δ cycle at the outline level (do not write code).
+For each phase, describe:
+
+1. **A — Analyze:** What CRYSTALIUM recall call do you make at Step 1? What
+   query, layers, and k value? What does the graceful-skip path look like if
+   CRYSTALIUM is absent?
+2. **P — Plan:** After producing the Execution Plan, what `plan_checkpoint`
+   call do you emit? What is the `plan_id` format and the `state` payload?
+   If you discovered mid-cycle that the plan needs a significant revision,
+   what `plan_replan` call would you make?
+3. **I — Implement:** If recall surfaced a procedural entry `skill-rails-boolean-flag`
+   in step 1, what `skill_invoke` call do you make before coding? After
+   verifying a new discovered pattern (ArticleQuery scope), what `commit`
+   call do you emit (include `layer`, `provenance.author_agent`)?
+4. **V — Verify:** After the `apivr-completion-report.envelope.json` is
+   produced, what `ingest` call do you make? What `from.eidolon` value does
+   CRYSTALIUM derive tier from, and what tier results?
+5. **Δ/R — Reflect (success):** What sequence of `commit` and `session_end`
+   calls closes the session? Specify `layer` and `provenance.author_agent`
+   for each commit.
+6. **CRYSTALIUM-absent fallback:** Restate the same five phases using the
+   local `agents/memories/*.md` Reflexion protocol. Name the specific files
+   written and the schema fields populated.
+
+### Expected output shape
+
+Six numbered sections mapping each phase to its CRYSTALIUM call(s). Section 1
+includes both the `recall` call and the explicit graceful-skip note. Sections
+2–5 each show the correct tool call with required parameters. Section 6
+explicitly names `task-log.md`, `failure-catalog.md`, `pattern-registry.md`,
+and `session-handoff.md` as the standalone fallback targets.
+
+### Validation criteria
+
+- MUST contain phrase: `mcp__crystalium__recall`
+- MUST contain phrase: `mcp__crystalium__plan_checkpoint`
+- MUST contain phrase: `mcp__crystalium__ingest`
+- MUST contain phrase: `mcp__crystalium__session_end`
+- MUST contain phrase: `author_agent.*apivr`
+- MUST contain phrase: `graceful.skip|CRYSTALIUM.*absent|absent.*CRYSTALIUM`
+- MUST contain phrase: `task-log\.md`
+- MUST contain phrase: `layer.*episodic|episodic.*layer`
+- SHOULD contain phrase: `plan_replan`
+- SHOULD contain phrase: `skill_invoke`
+- SHOULD contain phrase: `T1`
+- SHOULD have token count between 800 and 3000
+
+---
+
 ## Legacy mission catalog (pre-DSL)
 
 > The original five free-form missions ("Analyze Phase", "Plan Phase",

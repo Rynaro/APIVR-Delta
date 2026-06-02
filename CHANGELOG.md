@@ -9,6 +9,54 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [3.4.0] — 2026-06-02 — CRYSTALIUM memory pipeline
+
+### Added
+- `skills/memory-management.md` rewritten: CRYSTALIUM-primary / local-file-fallback
+  model. When `mcp__crystalium__*` tools are available, all memory routes through
+  CRYSTALIUM (`recall`, `commit`, `ingest`, `plan_checkpoint`, `plan_replan`,
+  `skill_invoke`, `session_end`). Local `agents/memories/*.md` Reflexion files
+  are the standalone fallback (EIIS conformance). Never both in the same session.
+  `provenance.author_agent` is `"apivr"` on all direct commits.
+- `skills/methodology.md` — phase hooks wired:
+  - **A-ANALYZE Step 1**: `mcp__crystalium__recall(layers=[semantic,episodic,procedural], k=8)`;
+    local-file path when absent.
+  - **P-PLAN** (phase output): `mcp__crystalium__plan_checkpoint(plan_id, state=<plan snapshot>)`;
+    `plan_replan` on mid-cycle abort/replan.
+  - **I-IMPLEMENT** (before build): `mcp__crystalium__skill_invoke` if procedural
+    entry recalled; `commit(layer=procedural)` for new verified skills.
+  - **V-VERIFY** / I-exit: `mcp__crystalium__ingest(envelope, payload)` for the
+    `apivr-completion-report` ECL envelope — records handoff at T1.
+  - **Δ/R — Post-task**: `commit(layer=episodic)` outcome + `commit(layer=semantic)`
+    failures + `commit(layer=procedural)` patterns; `session_end()` → Dream.
+- `skills/verify-incoming.md` — recall related context before processing an
+  inbound handoff; ingest the received envelope after `verify_pass`.
+- `skills/failure-recovery.md` — failure-catalog writes route to
+  `commit(layer=semantic)` when CRYSTALIUM present; cross-reference to
+  memory-management.md for routing decision.
+- `agent.md` — memory pre-flight note at mission intake (CRYSTALIUM recall →
+  local-file fallback); pointer to full protocol in memory-management.md.
+- `SPEC.md §7` — "Memory Protocol (CRYSTALIUM)" section: primary/fallback model,
+  full phase-hook table, graceful-skip contract, Dream, pointer to cortex
+  memory-protocol.md.
+- `evals/canary-missions.md` — new `memory-round-trip` mission: asserts recall at
+  Analyze, plan_checkpoint at Plan, ingest at Verify (author_agent=apivr, T1),
+  Reflect commits + session_end, and CRYSTALIUM-absent → local-file fallback.
+
+### Changed
+- `install.sh`: `EIDOLON_VERSION` bumped `3.3.1` → `3.4.0` (MINOR — additive
+  memory pipeline; ECL_VERSION/EIIS_VERSION unchanged).
+- `SPEC.md`: version footer updated to `3.4.0`; Memory table updated to show
+  CRYSTALIUM equivalent for each local file; I-6 invariant updated to
+  reference CRYSTALIUM-primary.
+- Methodology version in skill frontmatter: `memory-management.md` → `3.4`.
+
+### Compliance
+- Graceful-skip contract: every CRYSTALIUM call is silently skipped when
+  `mcp__crystalium__*` unavailable. EIIS standalone conformance preserved.
+- ECL_VERSION (2.0) and EIIS_VERSION (1.4) unchanged.
+- Bash 3.2 floor preserved in `install.sh` (no new shell features introduced).
+
 ## [3.3.1] — 2026-05-27
 
 - Patch: migrate evals/canary-missions.md to nexus v1.13.0 DSL format (smoke-default + plan-routing missions). Legacy free-form catalog preserved.

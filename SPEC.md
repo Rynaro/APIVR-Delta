@@ -2,7 +2,7 @@
 
 Evidence-grounded, test-anchored, context-aware feature implementation for brownfield codebases.
 
-**Version**: 3.1.0  
+**Version**: 3.4.0  
 **Entry point**: `agent.md` (always-loaded, ≤1000 tokens)
 
 ---
@@ -50,15 +50,17 @@ Load on-demand. Do NOT front-load all skills.
 
 ## Memory
 
-Persistent cross-session state lives in `memories/` (created by the agent, not installed):
+APIVR-Δ uses CRYSTALIUM as the primary backing store (see §7). The local
+`memories/` files below are the **standalone fallback** for sessions where
+CRYSTALIUM is not installed. Never write to both in the same session.
 
-| File | Purpose |
-|---|---|
-| `memories/task-log.md` | Completed tasks + outcomes |
-| `memories/pattern-registry.md` | Discovered reusable assets |
-| `memories/failure-catalog.md` | Root causes + prevention |
-| `memories/delta-history.md` | Improvement suggestions |
-| `memories/session-handoff.md` | Incomplete work checkpoint |
+| File | Purpose | CRYSTALIUM equivalent |
+|---|---|---|
+| `memories/task-log.md` | Completed tasks + outcomes | `commit(layer=episodic)` |
+| `memories/pattern-registry.md` | Discovered reusable assets | `commit(layer=procedural)` |
+| `memories/failure-catalog.md` | Root causes + prevention | `commit(layer=semantic)` |
+| `memories/delta-history.md` | Improvement suggestions | `commit(layer=semantic)` |
+| `memories/session-handoff.md` | Incomplete work checkpoint | `plan_checkpoint(state=...)` |
 
 ---
 
@@ -82,7 +84,7 @@ Persistent cross-session state lives in `memories/` (created by the agent, not i
 | **I-3** | Boundary Respect: explicit approval before scope expansion |
 | **I-4** | Test-Anchored: test expectations generated before implementation |
 | **I-5** | Escalate Early: 3 failures at same category = STOP |
-| **I-6** | Memory-first: query memories/ at start of every task |
+| **I-6** | Memory-first: recall via CRYSTALIUM (or local memories/ fallback) at start of every task |
 | **I-7** | **ECL emit at hand-off boundaries**: Implement-phase exit MUST produce a `apivr-completion-report` envelope sidecar (to IDG). Reflect-phase escalation on 3-failure threshold MUST produce a `repair-failed-report` envelope (to VIGIL). Plan-phase FORGE consultation MUST produce a `reasoning-request` envelope. Templates at `templates/*.envelope.json`. |
 
 ## Core Principles
@@ -103,9 +105,59 @@ Key influences: AlphaCodium (flow engineering), SWE-Agent (agent-computer interf
 
 ---
 
-## §7 ECL Compatibility
+## §7 Memory Protocol (CRYSTALIUM)
 
-APIVR-Δ v3.1.0 targets **ECL v1.0** (see `ECL_VERSION` at the repo root).
+APIVR-Δ v3.4.0 integrates CRYSTALIUM as the **primary backing store**, with the
+local `agents/memories/*.md` Reflexion files as the **standalone fallback** for
+when CRYSTALIUM is not installed.
+
+### Model
+
+**CRYSTALIUM-primary / local-fallback.** When `mcp__crystalium__*` tools are
+available, all memory reads and writes route through CRYSTALIUM. When absent,
+the local Reflexion protocol (`agents/memories/`) is used unchanged. Never
+write to both in the same session.
+
+**Trust tier:** T1 (set process-wide via `CRYSTALIUM_CALLER_TIER=T1`).
+`provenance.author_agent` MUST be `"apivr"` on every direct `commit` call.
+
+### Phase hooks
+
+| Phase | Hook | Call |
+|-------|------|------|
+| **A — Analyze** (Step 1) | Memory recall | `recall(layers=[semantic,episodic,procedural], k=8)` |
+| **P — Plan** (phase output) | Plan checkpoint | `plan_checkpoint(plan_id, state=<plan snapshot>)` |
+| **P — Plan** (mid-cycle abort/replan) | Plan replan | `plan_replan(from_checkpoint_id, new_plan={diff,supersedes_id})` |
+| **I — Implement** (before build) | Skill reuse | `skill_invoke(skill_id)` if procedural entry recalled |
+| **I — Implement** (new verified pattern) | Procedural commit | `commit(layer=procedural, provenance={author_agent:"apivr"})` |
+| **V — Verify** / I-exit | Completion report persist | `ingest(envelope=<apivr-completion-report.envelope.json>, payload)` |
+| **Δ/R — Reflect** | Task outcome | `commit(layer=episodic)` outcome + `commit(layer=semantic)` failures + `commit(layer=procedural)` patterns |
+| **Δ/R — Reflect** (end) | Session end | `session_end()` → triggers Dream consolidation |
+| **verify-incoming** (on receive) | Inbound recall + ingest | `recall(...)` before processing; `ingest(received envelope)` after `verify_pass` |
+| **failure-recovery** (R phase) | Failure catalog | `commit(layer=semantic)` root cause/prevention |
+
+### Graceful-skip contract
+
+Every CRYSTALIUM call is wrapped in a graceful-skip: if `mcp__crystalium__*` is
+unavailable, fall through to the local-file path silently. Never hard-fail. APIVR-Δ
+remains EIIS-standalone-conformant.
+
+### Dream consolidation
+
+`session_end()` triggers Dream asynchronously. Dream handles episodic→semantic
+promotion, dedup, and pruning. Do NOT hand-consolidate when CRYSTALIUM is present.
+
+### Reference
+
+Full layer × tier matrix, `plan_checkpoint`/`plan_replan` semantics, and Dream
+knobs: `methodology/cortex/memory-protocol.md` (nexus repo). Skill detail:
+`skills/memory-management.md`.
+
+---
+
+## §8 ECL Compatibility
+
+APIVR-Δ v3.4.0 targets **ECL v2.0** (see `ECL_VERSION` at the repo root).
 
 ### Emit kinds
 
@@ -128,4 +180,4 @@ When an upstream artefact arrives with a sibling `.envelope.json`, load `skills/
 
 ### Compatibility window
 
-APIVR-Δ v3.1.0 accepts ECL envelopes matching `^1\.0(\.\d+)?$`. Receivers on VIGIL and FORGE are not yet ECL-adopters; emit is one-way until those Eidolons adopt (see `DESIGN-RATIONALE.md` §Future work).
+APIVR-Δ v3.4.0 accepts ECL envelopes matching `^2\.0(\.\d+)?$`. Receivers on VIGIL and FORGE are not yet ECL-adopters; emit is one-way until those Eidolons adopt (see `DESIGN-RATIONALE.md` §Future work).

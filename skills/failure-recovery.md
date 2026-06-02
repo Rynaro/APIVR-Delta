@@ -11,6 +11,32 @@ Structured failure classification, targeted debugging, and escalation protocols.
 
 ---
 
+## Memory: Failure Catalog Writes (CRYSTALIUM)
+
+Failure root causes discovered during R — REFLECT should be committed to
+CRYSTALIUM (when available) rather than written to the local `failure-catalog.md`:
+
+```
+mcp__crystalium__commit(
+  layer   = "semantic",
+  payload = {
+    failure_category: <taxonomy category>,
+    context:          <what was being done>,
+    root_cause:       <what went wrong>,
+    prevention:       <how to avoid in future>,
+    domain:           <area/module>
+  },
+  provenance = { author_agent: "apivr" }
+)
+```
+
+**Graceful skip:** if CRYSTALIUM unavailable, write to `agents/memories/failure-catalog.md`
+per the Standalone Fallback in `skills/memory-management.md`. Never write both.
+
+See `skills/memory-management.md` for the full routing decision.
+
+---
+
 ## Critical Rule: Evidence Gate
 
 **Before attempting ANY fix, you MUST have concrete evidence.**

@@ -14,12 +14,28 @@ Feature implementation through evidence-grounded planning, test-anchored develop
 ## A — ANALYZE Phase
 
 ### Step 1: Memory Recall
-Query `agents/memories/` for:
-- Past tasks in same module or domain
-- Known reusable assets
-- Previous failure patterns in this area
+
+**CRYSTALIUM path** (when `mcp__crystalium__*` available):
+
+```
+mcp__crystalium__recall(
+  scope  = { project: <cwd-project>, agent_class_visibility: "apivr" },
+  query  = <task goal + domain + module area>,
+  k      = 8,
+  layers = ["semantic", "episodic", "procedural"]
+)
+```
+
+`episodic` surfaces past task outcomes; `semantic` surfaces failure root causes
+and architectural decisions; `procedural` surfaces verified reusable skills.
+Fold relevant hits into mission context (≤ 1-2K tokens summarized).
+
+**Standalone path** (when CRYSTALIUM absent): query `agents/memories/` for past
+tasks in the same module, known reusable assets, and previous failure patterns.
 
 Score matches by: path proximity → recency → outcome quality. Budget: ≤ 20 entries.
+
+See `agents/skills/memory-management.md` for the full routing decision and protocol.
 
 ### Step 2: Repo Map Generation
 Before reading any file in detail, generate a structural overview:
@@ -152,6 +168,33 @@ Document:
 
 **Phase output**: Execution Plan (use `agents/templates/execution-plan.md`)
 
+### Memory: Plan Checkpoint (CRYSTALIUM)
+
+After the Execution Plan is produced, call (if CRYSTALIUM available):
+
+```
+mcp__crystalium__plan_checkpoint(
+  plan_id  = <task-slug + date>,
+  state    = <full execution plan snapshot>,
+  step     = "initial",
+  metadata = { author_agent: "apivr", task_title: <title> }
+)
+```
+
+Store the returned `checkpoint_id` in working context. If the plan is revised
+mid-cycle (the abort rules below fire), call `plan_replan` before re-entering
+Plan:
+
+```
+mcp__crystalium__plan_replan(
+  plan_id            = <plan_id>,
+  from_checkpoint_id = <checkpoint_id>,
+  new_plan           = { diff: <what changed and why>, supersedes_id: <checkpoint_id> }
+)
+```
+
+**Graceful skip:** if CRYSTALIUM unavailable, skip these calls silently.
+
 ### ECL emit on FORGE consultation
 
 If Plan-phase reasoning calls for a FORGE consultation (adversarial reasoning, trade-off arbitration), emit a `reasoning-request.envelope.json` next to the question artefact (template at `templates/reasoning-request.envelope.json`). Required: `to.eidolon=forge`, `performative=REQUEST`, `artifact.kind=reasoning-request`. Body validates against `schemas/_base-profile.v1.json`. Skip the envelope when `ECL_VERSION` is absent.
@@ -159,6 +202,31 @@ If Plan-phase reasoning calls for a FORGE consultation (adversarial reasoning, t
 ---
 
 ## I — IMPLEMENT Phase
+
+### Memory: Skill Reuse (CRYSTALIUM)
+
+Before building, if the A-ANALYZE recall surfaced a procedural entry for this
+task type, invoke it (if CRYSTALIUM available):
+
+```
+mcp__crystalium__skill_invoke(
+  skill_id = <procedural entry id from recall>,
+  context  = <current task context>
+)
+```
+
+Use the result to short-circuit re-derivation. After verifying a new reusable
+pattern, commit it:
+
+```
+mcp__crystalium__commit(
+  layer   = "procedural",   # "semantic" if unverified
+  payload = <pattern: name, location, purpose, usage_hint, quality>,
+  provenance = { author_agent: "apivr" }
+)
+```
+
+**Graceful skip:** if CRYSTALIUM unavailable, skip these calls silently.
 
 ### Execution Priority
 
@@ -212,6 +280,18 @@ Run tests incrementally, not all at once:
 ### ECL emit on Implement-phase exit
 
 On phase exit, emit `apivr-completion-report.envelope.json` next to the completion artefact (template at `templates/apivr-completion-report.envelope.json`). Required: `to.eidolon=idg`, `performative=PROPOSE`, `artifact.kind=apivr-completion-report`, `integrity.method=sha256` matching the payload bytes. Profile schema: `schemas/apivr-completion-report-profile.v1.json` (required keys: `files_changed_count`, `tests_run`, `tests_passed`). Skip when `ECL_VERSION` is absent.
+
+After the envelope is produced and verified (V-VERIFY phase), ingest it into
+CRYSTALIUM (if available):
+
+```
+mcp__crystalium__ingest(
+  envelope = <apivr-completion-report.envelope.json contents>,
+  payload  = <completion report contents>
+)
+```
+
+**Graceful skip:** if CRYSTALIUM unavailable, skip silently.
 
 ---
 
@@ -333,19 +413,32 @@ Status: SUGGESTION ONLY — Do not implement
 
 ---
 
-## Post-Task: Memory Update
+## Post-Task: Memory Update (Δ/R phase)
 
-After every task (success or failure), update memory. See `agents/skills/memory-management.md`.
+After every task (success or failure), update memory via the active path.
+See `agents/skills/memory-management.md` for the full protocol.
+
+**CRYSTALIUM path** (when available):
 
 ```
-Record:
-- Task summary (one line)
-- Outcome: SUCCESS / PARTIAL / FAILED / ESCALATED
-- Key decisions and why
-- Assets discovered or created
-- Failure patterns encountered (if any)
-- Delta suggestions generated (if any)
+# Task outcome
+mcp__crystalium__commit(layer="episodic", payload={task_title, domain, outcome,
+  summary, key_decisions, lesson}, provenance={author_agent:"apivr"})
+
+# Failure root causes (if any)
+mcp__crystalium__commit(layer="semantic", payload={failure_category, context,
+  root_cause, prevention, domain}, provenance={author_agent:"apivr"})
+
+# New patterns (if discovered and verified)
+mcp__crystalium__commit(layer="procedural", payload={pattern_name, location,
+  purpose, usage_hint, quality:"verified"}, provenance={author_agent:"apivr"})
+
+# End session
+mcp__crystalium__session_end()   # triggers Dream consolidation
 ```
+
+**Standalone path** (when CRYSTALIUM absent): write to `agents/memories/`
+files per `skills/memory-management.md §Standalone Fallback`.
 
 ---
 
