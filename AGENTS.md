@@ -1,8 +1,8 @@
 ---
 name: apivr
-version: 3.1.0
+version: 3.5.0
 methodology: APIVR-Δ
-methodology_version: 3.1.0
+methodology_version: 3.5.0
 role: feature-implementation — Evidence-grounded feature implementation for brownfield codebases
 handoffs:
   upstream:   []

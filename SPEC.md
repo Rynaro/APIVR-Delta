@@ -2,7 +2,7 @@
 
 Evidence-grounded, test-anchored, context-aware feature implementation for brownfield codebases.
 
-**Version**: 3.4.0  
+**Version**: 3.5.0  
 **Entry point**: `agent.md` (always-loaded, ≤1000 tokens)
 
 ---
@@ -110,7 +110,7 @@ Key influences: AlphaCodium (flow engineering), SWE-Agent (agent-computer interf
 
 ## §7 Memory Protocol (CRYSTALIUM)
 
-APIVR-Δ v3.4.0 integrates CRYSTALIUM as the **primary backing store**, with the
+APIVR-Δ v3.5.0 integrates CRYSTALIUM as the **primary backing store**, with the
 local `agents/memories/*.md` Reflexion files as the **standalone fallback** for
 when CRYSTALIUM is not installed.
 
@@ -160,7 +160,7 @@ knobs: `methodology/cortex/memory-protocol.md` (nexus repo). Skill detail:
 
 ## §8 ECL Compatibility
 
-APIVR-Δ v3.4.0 targets **ECL v2.0** (see `ECL_VERSION` at the repo root).
+APIVR-Δ v3.5.0 targets **ECL v2.0** (see `ECL_VERSION` at the repo root).
 
 ### Emit kinds
 
@@ -183,7 +183,7 @@ When an upstream artefact arrives with a sibling `.envelope.json`, load `skills/
 
 ### Compatibility window
 
-APIVR-Δ v3.4.0 accepts ECL envelopes matching `^2\.0(\.\d+)?$`. Receivers on VIGIL and FORGE are not yet ECL-adopters; emit is one-way until those Eidolons adopt (see `DESIGN-RATIONALE.md` §Future work).
+APIVR-Δ v3.5.0 accepts ECL envelopes matching `^2\.0(\.\d+)?$`. Receivers on VIGIL and FORGE are not yet ECL-adopters; emit is one-way until those Eidolons adopt (see `DESIGN-RATIONALE.md` §Future work).
 
 ---
 

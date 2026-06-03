@@ -7,7 +7,7 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
-## [Unreleased]
+## [3.5.0] — 2026-06-03 — Parallel multi-track mode (TRANCE G4)
 
 ### Added
 - `skills/parallel-tracks.md` (new flat skill, `apivr-parallel-tracks`):
@@ -47,6 +47,14 @@ Versioning: [Semantic Versioning](https://semver.org/)
   and `tracks-merge-report.md` (add_fw) so the canonical-inventory sweep
   whitelists them.
 - `tests/install.bats`: existence assertions for the new skill and template.
+- Release-version stamps normalized to `3.5.0` (fixing pre-existing drift):
+  `install.sh` `EIDOLON_VERSION` `3.4.0` → `3.5.0`; `SPEC.md` version header
+  and §7/§8 self-references `3.4.0` → `3.5.0`; `AGENTS.md` frontmatter
+  `version` / `methodology_version` `3.1.0` → `3.5.0`. Corrected the stale
+  `tests/install.bats` `EIDOLON_VERSION` assertion (header comment, test name,
+  and grep) from `3.2.0` to `3.5.0` so the gate matches `install.sh`. ECL
+  (`2.0`), EIIS (`1.4`), JSON-Schema (`1.0`/`1.5.0`), and canary DSL versions
+  are deliberately untouched.
 
 > Scope note: the verifier cascade described here is host-interpreted
 > methodology, not a mechanical runtime. The autonomous edit-run-test loop
