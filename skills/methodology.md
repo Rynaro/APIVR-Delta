@@ -118,6 +118,22 @@ For each acceptance criterion:
 
 These test anchors become the source of truth for implementation correctness. Implementation is done when these tests pass.
 
+**ANTI-OVERFIT rule (mandatory).** Test anchors derive from the **acceptance
+criteria + EXISTING test patterns** in the codebase — never reverse-engineered
+from a candidate implementation. Writing tests *after* (or to fit) the code you
+intend to write reproduces the field's named failure: agents over-fit
+implementations to tests they authored in hindsight (DESIGN-RATIONALE Decision 3;
+SWE-bench-style contamination/overfitting). If you cannot state an anchor from
+the acceptance criteria alone, the criterion is under-specified — clarify it,
+do not invent an implementation-shaped test.
+
+**CAPTURE-LIVE-FIRST gate (mandatory).** When the task parses external CLI
+stdout/stderr, or consumes a serde-renamed / IPC payload, **stage the verbatim
+live capture as the fixture BEFORE writing the parser.** Fabricated fixtures
+pass 10/10 tests vacuously while every assumption about the real output is
+wrong. Capture one real sample (or a one-line dump of the live payload) first;
+that capture is the anchor.
+
 ### Step 2: Strategy Generation (Tree-of-Thoughts)
 
 Generate 3-5 genuinely different strategies. Requirements:
@@ -311,6 +327,19 @@ Run and capture output for ALL of these:
 **Decision**:
 - ALL PASS → proceed to **Δ (Delta)**
 - ANY FAIL → proceed to **R (Reflect)**
+
+### Reliability-under-repetition gate (pass^k)
+
+A single green run is necessary but NOT sufficient. For any test the host can
+re-run (and ALWAYS for the post-merge regression suite in parallel-track mode,
+`skills/parallel-tracks.md`), frame verification as **pass^k**: a test that
+passes once but is **non-deterministic across repeats** is classified **flaky**
+and the change is **BLOCKED — not merged**, not silently accepted. This guards
+against the field's pass^k reliability collapse (a result that holds at k=1 but
+degrades at k>1) and mirrors the nexus "second install is idempotent"
+discipline. Treat a flaky anchor as a verification FAILURE: route to **R
+(Reflect)** with category `REGRESSION` or `INTEGRATION_ERROR`, do not advance to
+Δ.
 
 ---
 

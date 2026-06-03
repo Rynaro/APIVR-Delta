@@ -119,6 +119,67 @@ and `session-handoff.md` as the standalone fallback targets.
 
 ---
 
+## Mission: parallel-tracks
+
+### Prompt
+
+You are the APIVR-Δ implementation agent. The task is **TRANCE-authorized**
+(both a complexity flag and a stakes flag have fired) and classified
+**Complex**. The Plan phase has produced **three independent implementation
+tracks with disjoint file sets** (no two tracks touch the same file).
+
+> Task: Implement three independent sub-features — (1) a `Reporting` export
+> module, (2) an `Audit` log writer, and (3) a `Notifications` dispatcher —
+> each owning its own files, with no shared edits.
+
+Describe how you run the **TRANCE G4 parallel multi-track mode** at the outline
+level. Do NOT write code. For the mode, describe:
+
+1. The **entry gate** you check (and what makes you fall back to single-track).
+2. The **fan-out** — how many tracks, the isolation mechanism per track, and the
+   context model per track.
+3. The **per-track verifier cascade** and which ECL envelope each passed track
+   emits (and whether a new ECL kind is needed).
+4. The **per-track reflection budget** and what happens to a track that exhausts
+   it.
+5. The **single-threaded merge / aggregation step**, the post-merge suite
+   framing, and how a regression that appears only after merge is classified.
+6. What happens on an **unresolved cross-track conflict**.
+
+State explicitly that single-track A→P→I→V→Δ/R is the default and that this
+mode is TRANCE-gated, never default.
+
+### Expected output shape
+
+A response describing the parallel multi-track mode. It checks an entry gate
+requiring disjoint file sets and falls back to single-track on any overlap. It
+fans out at most five tracks, each in its **own git worktree** (isolation), each
+a clean-context subagent. Each track runs its own verifier cascade and emits the
+existing `apivr-completion-report` envelope (no new ECL kind). The per-track ≤3
+reflection budget is non-fungible — a track that exhausts it is BLOCKED and
+excluded from merge. The merge is single-threaded under continuous parent
+context, runs the full suite once post-merge with a pass^k framing, classifies
+post-merge-only regressions as INTEGRATION_ERROR, and escalates an unresolved
+cross-track conflict to VIGIL via the existing `repair-failed-report` envelope.
+The response states that single-track is the default and the mode is
+TRANCE-gated.
+
+### Validation criteria
+
+- MUST contain phrase: `isolation.*worktree|worktree.*isolation`
+- MUST contain phrase: `merge`
+- MUST contain phrase: `TRANCE`
+- MUST contain phrase: `apivr-completion-report`
+- MUST contain phrase: `single.track`
+- MUST contain phrase: `5|five`
+- SHOULD contain phrase: `pass\^k|pass.k`
+- SHOULD contain phrase: `INTEGRATION_ERROR`
+- SHOULD contain phrase: `non.fungible|BLOCKED`
+- SHOULD contain phrase: `repair-failed-report`
+- SHOULD have token count between 800 and 3000
+
+---
+
 ## Legacy mission catalog (pre-DSL)
 
 > The original five free-form missions ("Analyze Phase", "Plan Phase",

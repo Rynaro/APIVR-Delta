@@ -61,6 +61,14 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   [ -f "${REPO_ROOT}/skills/verify-incoming.md" ]
 }
 
+@test "parallel-tracks skill exists (flat layout, TRANCE G4)" {
+  [ -f "${REPO_ROOT}/skills/parallel-tracks.md" ]
+}
+
+@test "tracks-merge-report template exists (parallel-mode aggregation artifact)" {
+  [ -f "${REPO_ROOT}/templates/tracks-merge-report.md" ]
+}
+
 @test "repair-failed-report template has trust_level high" {
   if ! command -v jq &>/dev/null; then
     skip "jq not available"

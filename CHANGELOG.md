@@ -9,6 +9,49 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+### Added
+- `skills/parallel-tracks.md` (new flat skill, `apivr-parallel-tracks`):
+  operationalizes the TRANCE G4 form — parallel multi-track implementation in
+  **mandatory** git-worktree isolation, max 5 clean-context tracks (cortex C1),
+  a per-track verifier cascade reusing the existing `apivr-completion-report`
+  envelope, a non-fungible per-track ≤3 reflection budget (D5 / trance-matrix
+  R3+R4), explicit stop conditions, and a single-threaded merge/aggregation
+  step. **TRANCE-gated, never default**; single-track A→P→I→V→Δ/R stays the
+  default.
+- `templates/tracks-merge-report.md`: aggregation artifact for the merge step
+  (per-track verdicts, merge order, conflicts resolved, post-merge pass^k suite
+  result, blocked-track disposition). Markdown template, **not** a new ECL kind
+  — preserves the closed 10-performative set.
+- `SPEC.md §9` "Parallel Multi-Track Mode (TRANCE G4)" + §9.1 verification
+  hardening, and new Architectural Invariant **I-8** (parallel WRITE requires
+  worktree isolation; merge is single-threaded under continuous parent context).
+- `evals/canary-missions.md`: new `parallel-tracks` DSL mission.
+
+### Changed
+- `skills/methodology.md`: P-PLAN test-anchoring hardened against overfitting
+  (anchors from acceptance criteria + existing patterns, never reverse-engineered
+  from a candidate impl; capture-live-before-parsing gate); V-VERIFY adds a
+  pass^k reliability-under-repetition gate that marks non-deterministic tracks
+  flaky/BLOCKED rather than advancing. Skills Index lists `parallel-tracks`
+  (via SPEC.md §9).
+- `skills/failure-recovery.md`: Retry Decision Matrix + Loop Detection extended
+  for multi-track mode — per-track budget non-fungibility, cross-track
+  `INTEGRATION_ERROR` classification, and VIGIL escalation via the existing
+  `repair-failed-report` contract.
+- `DESIGN-RATIONALE.md`: Decision 7 (parallel multi-track = worktree-isolated,
+  bounded, TRANCE-gated) with research→decision mapping (R1-01 / R4-08 / R1-02 /
+  R3-06 / R6-F08); the "Multi-agent orchestration" non-decision is **amended**
+  (single-track remains the default) rather than removed. Notes the
+  host-interpreted / nexus-R1 runtime cap explicitly.
+- `install.sh`: registers `parallel-tracks` (wire_skill + add_fw + add_skill)
+  and `tracks-merge-report.md` (add_fw) so the canonical-inventory sweep
+  whitelists them.
+- `tests/install.bats`: existence assertions for the new skill and template.
+
+> Scope note: the verifier cascade described here is host-interpreted
+> methodology, not a mechanical runtime. The autonomous edit-run-test loop
+> remains nexus gap R1 and is out of scope for this repo.
+
 ## [3.4.0] — 2026-06-02 — CRYSTALIUM memory pipeline
 
 ### Added

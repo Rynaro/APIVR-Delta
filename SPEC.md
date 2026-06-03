@@ -35,6 +35,7 @@ Load on-demand. Do NOT front-load all skills.
 | Context engineering | `skills/context-engineering.md` | Starting Analyze phase |
 | Failure recovery | `skills/failure-recovery.md` | Test failure, lint error, build break |
 | Memory management | `skills/memory-management.md` | Session start, session end, repeated pattern |
+| Parallel multi-track (G4) | `skills/parallel-tracks.md` | TRANCE-authorized AND Plan yields disjoint-file tracks (see §9) |
 
 ---
 
@@ -45,6 +46,7 @@ Load on-demand. Do NOT front-load all skills.
 | Discovery Report | `templates/discovery-report.md` | A — Analyze |
 | Execution Plan | `templates/execution-plan.md` | P — Plan |
 | Reflect Entry | `templates/reflect-entry.md` | R — Reflect |
+| Tracks Merge Report | `templates/tracks-merge-report.md` | Merge (G4, §9) |
 
 ---
 
@@ -86,6 +88,7 @@ CRYSTALIUM is not installed. Never write to both in the same session.
 | **I-5** | Escalate Early: 3 failures at same category = STOP |
 | **I-6** | Memory-first: recall via CRYSTALIUM (or local memories/ fallback) at start of every task |
 | **I-7** | **ECL emit at hand-off boundaries**: Implement-phase exit MUST produce a `apivr-completion-report` envelope sidecar (to IDG). Reflect-phase escalation on 3-failure threshold MUST produce a `repair-failed-report` envelope (to VIGIL). Plan-phase FORGE consultation MUST produce a `reasoning-request` envelope. Templates at `templates/*.envelope.json`. |
+| **I-8** | **Parallel WRITE requires worktree isolation** (TRANCE G4, §9): APIVR-Δ never fans out into a shared tree; each track runs in its own git worktree; max 5 tracks; the per-track reflection budget is non-fungible; and the merge is single-threaded under continuous parent context. Single-track A→P→I→V→Δ/R stays the default — this mode is TRANCE-gated + entry-gated, never default. |
 
 ## Core Principles
 
@@ -181,3 +184,40 @@ When an upstream artefact arrives with a sibling `.envelope.json`, load `skills/
 ### Compatibility window
 
 APIVR-Δ v3.4.0 accepts ECL envelopes matching `^2\.0(\.\d+)?$`. Receivers on VIGIL and FORGE are not yet ECL-adopters; emit is one-way until those Eidolons adopt (see `DESIGN-RATIONALE.md` §Future work).
+
+---
+
+## §9 Parallel Multi-Track Mode (TRANCE G4)
+
+Authoritative description of the TRANCE G4 form. Full procedure: `skills/parallel-tracks.md`.
+
+**Single-track is the default.** The standard A→P→I→V→Δ/R cycle runs for every task. This mode activates ONLY under TRANCE authorization (a complexity flag AND a stakes flag, cortex C6) AND the entry gate below. It is **never** the default — it adds parallelism, not a fresh budget (trance-matrix R3) and not reflection past the published caps (trance-matrix R4). Absent TRANCE gating, APIVR-Δ runs exactly as today.
+
+### Entry gate (refuse unless ALL hold)
+
+| # | Condition |
+|---|---|
+| G-1 | TRANCE-authorized (complexity flag AND stakes flag, cortex C6). |
+| G-2 | Complexity = Complex (4+ files, cross-domain). |
+| G-3 | The Plan phase produced N implementation tracks with **disjoint file sets**, verified against the collision map. |
+| G-4 | Tracks do NOT share files. Any overlap → the precondition FAILS → fall back to single-track. |
+
+### Mode (bounded)
+
+1. **Fan-out:** max **5** tracks (cortex C1); each in its **own git worktree** (`isolation: worktree` is MANDATORY — never the shared tree, invariant **I-8**); each a clean-context subagent (prevents trajectory contamination); perspective-diverse only where it helps (quality dominates diversity).
+2. **Per-track verifier cascade:** each track runs its own Verify (lint → test-anchors → regression) with the anti-overfit and pass^k gates; on pass it emits its existing **`apivr-completion-report`** envelope. **No new ECL kind** — the closed 10-performative set is preserved.
+3. **Non-fungible reflection budget:** the ≤3 same-category budget (I-5 / D5 / trance-matrix R4) is **per-worktree**; a track may not borrow another track's retries; a budget-exhausted track is marked **BLOCKED**, excluded from merge, and never silently re-driven.
+4. **Stop conditions:** all tracks Verify-pass or Verify-blocked; hard cap 5 tracks; per-track ≤3 retries; no track expands scope into another track's file set (I-3).
+5. **Aggregation / merge (single-threaded, mandatory):** dependency-ordered merge of PASSED worktrees under continuous parent context (the write boundary stays single-threaded); run the FULL regression suite **once** post-merge with the pass^k gate; classify cross-track breaks as `INTEGRATION_ERROR`; emit `templates/tracks-merge-report.md`. Unresolved cross-track conflict → escalate to VIGIL via the existing **`repair-failed-report`** envelope (no new kind, no new schema).
+
+### Runtime cap (honest)
+
+The per-track verifier cascade and merge here are **host-interpreted methodology**, not a mechanical runtime. APIVR-Δ does not auto-run the cascade; the parent/host orchestrator executes worktree spin-up + cleanup, the per-track verifier invocations, and the merge. The autonomous edit-run-test loop remains **nexus gap R1** and is out of scope for this repo.
+
+### §9.1 Verification hardening (anti-overfit + pass^k)
+
+The Plan and Verify phases are hardened against the field's named contamination/overfitting failures (see `skills/methodology.md`):
+
+- **Anti-overfit test anchoring** (P-PLAN): test anchors derive from the acceptance criteria + EXISTING test patterns, never reverse-engineered from a candidate implementation (Decision 3 — agents over-fit implementations to tests written in hindsight).
+- **Capture-live-first** (P-PLAN): when a track parses external CLI stdout/stderr or serde-renamed IPC, the verbatim live capture MUST be staged as the fixture BEFORE the parser is written (fabricated fixtures pass vacuously).
+- **Reliability-under-repetition / pass^k** (V-VERIFY): the post-merge suite (and any test the host can run) is framed pass^k — a track that passes once but is non-deterministic across repeats is **flaky → BLOCKED**, not merged (mirrors the nexus "second install is idempotent" discipline).
