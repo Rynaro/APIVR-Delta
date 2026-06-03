@@ -3,7 +3,7 @@ set -euo pipefail
 
 EIDOLON_NAME="apivr"
 EIDOLON_SLUG="apivr"
-EIDOLON_VERSION="3.4.0"
+EIDOLON_VERSION="3.5.0"
 METHODOLOGY="APIVR-Δ"
 ECL_VERSION_VAL="1.0"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -438,11 +438,12 @@ Cycle:     A (Analyze) → P (Plan) → I (Implement) → V (Verify) → Δ (Del
     fi
   }
 
-  # Emit per-skill files for all 5 skills (flat layout, EIIS v1.3 §4.2.4.3).
+  # Emit per-skill files for all 6 skills (flat layout, EIIS v1.3 §4.2.4.3).
   wire_skill "context-engineering"
   wire_skill "failure-recovery"
   wire_skill "memory-management"
   wire_skill "methodology"
+  wire_skill "parallel-tracks"
   wire_skill "verify-incoming"
 
   # AGENTS.md — opt-in shared dispatch only.
@@ -641,6 +642,7 @@ if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
   add_fw "skills/failure-recovery.md"      "skill"       "created"
   add_fw "skills/memory-management.md"     "skill"       "created"
   add_fw "skills/methodology.md"           "skill"       "created"
+  add_fw "skills/parallel-tracks.md"       "skill"       "created"
   add_fw "skills/verify-incoming.md"       "skill"       "created"
 
   # Build skills[] EIIS v1.3 §4.2.4 dual-write records.
@@ -664,11 +666,13 @@ if [[ "$DRY_RUN" != "true" && -d "$TARGET" ]]; then
   add_skill "failure-recovery"
   add_skill "memory-management"
   add_skill "methodology"
+  add_skill "parallel-tracks"
   add_skill "verify-incoming"
   skills_json="[${sk%,}]"
   add_fw "templates/discovery-report.md" "template"   "created"
   add_fw "templates/execution-plan.md"  "template"    "created"
   add_fw "templates/reflect-entry.md"   "template"    "created"
+  add_fw "templates/tracks-merge-report.md" "template" "created"
   # ECL v1.0 artefacts
   # ECL_VERSION role is "ecl-version" per EIIS v1.4 §3.7.1 (was "other" at v1.3).
   add_fw "ECL_VERSION"                                        "ecl-version" "created"

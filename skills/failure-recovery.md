@@ -209,6 +209,25 @@ If REGRESSION failed twice:
   → This may indicate the selected strategy was wrong.
 ```
 
+### Parallel Multi-Track Mode (TRANCE G4)
+
+When running the parallel multi-track mode (`skills/parallel-tracks.md`), the
+retry contract is scoped **per worktree**:
+
+- **Per-track budget NON-FUNGIBILITY.** The ≤3-same-category budget is scoped to
+  the individual worktree. A track **may NOT** consume another track's retries.
+  A budget-exhausted track is marked **BLOCKED** and **excluded from the merge**
+  — it is **never** silently re-driven (trance-matrix R3/R4: TRANCE adds
+  parallelism, not a fresh budget or reflection past the published caps).
+- **CROSS-TRACK `INTEGRATION_ERROR`.** A regression that appears **only after
+  merge** (the change passed in its own worktree but the post-merge full suite
+  fails) is classified **`INTEGRATION_ERROR`** and routed to the
+  single-threaded merge step's reflection — **NOT** pushed back into a track.
+  Per-track budgets are not reopened by a merge-stage failure.
+- **Escalation on unresolved cross-track conflict** reuses the **existing**
+  `repair-failed-report.envelope.json` contract to VIGIL (see below) — no new
+  ECL kind, no new schema. The closed 10-performative set is preserved (P0).
+
 ---
 
 ## Loop Detection

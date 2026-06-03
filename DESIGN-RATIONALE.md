@@ -64,6 +64,47 @@ Research-to-decision mapping for APIVR-Δ v3.0. For the full evidence base with 
 
 ---
 
+## Decision 7: Parallel multi-track mode is worktree-isolated, bounded, and TRANCE-gated
+
+**Research basis**: Multi-agent evidence is asymmetric — parallelism helps the
+*read*/explore phase but hurts *write* unless writes are strictly isolated
+(R1-01), and sub-agent isolation that is safe for read is dangerous for write
+without separation (R4-08). The orchestrator-worker sweet spot caps fan-out at
+~5 (R1-02 / cortex C1). Quality dominates diversity-for-its-own-sake, so tracks
+are perspective-diverse only where the sub-features genuinely differ — not
+N-identical (R3-06). And a single green run is not reliability: pass^k collapse
+means a result that holds at k=1 can degrade at k>1 (R6-F08), so the post-merge
+suite is framed pass^k. Project memory confirms the failure mode directly:
+fanning out multiple agents on one working tree clobbers branches
+(`feedback_parallel_agents_same_repo`).
+
+**Decision**: Operationalize the TRANCE G4 form (`skills/parallel-tracks.md`,
+SPEC.md §9) as a bounded protocol — entry gate (disjoint file sets + Complex +
+TRANCE), max 5 tracks each in its **own git worktree** (`isolation: worktree`
+MANDATORY, invariant I-8), clean-context subagents, a per-track verifier
+cascade reusing the existing `apivr-completion-report` envelope, a
+**non-fungible** per-track ≤3 reflection budget, explicit stop conditions, and a
+**single-threaded merge** under continuous parent context (the write boundary
+stays single-threaded even though the fan-out was parallel). The merge emits
+`tracks-merge-report.md`; an unresolved cross-track conflict escalates to VIGIL
+via the existing `repair-failed-report` envelope (no new ECL kind).
+
+**Alternatives considered**: (a) shared-tree fan-out — rejected, it clobbers the
+working tree and is project-memory-confirmed harmful; isolation must be a
+worktree. (b) Unbounded multi-agent orchestration — rejected; the "Multi-agent
+orchestration" non-decision below is **amended, not removed**: single-track
+A→P→I→V→Δ/R remains the default, and this mode is TRANCE-gated + entry-gated,
+never default.
+
+**Runtime cap (explicit)**: the verifier cascade and merge described here are
+**host-interpreted** methodology; the worktree spin-up/cleanup and per-track
+verifier invocations are executed by the parent orchestrator. Mechanical
+execution of the cascade is **nexus gap R1** (the missing autonomous
+edit-run-test loop) and is out of scope for this repo. This is the dominant,
+honestly-unmovable score cap from inside APIVR-Δ.
+
+---
+
 ---
 
 ## ECL adoption — emit + verify-incoming (v3.1.0)
@@ -105,5 +146,5 @@ ECL §0 declares adoption opt-in at v1.0. APIVR-Δ is a receiver, not an authori
 ## Non-decisions (deliberately out of scope)
 
 - **Vector search for memory**: Regex/keyword search over structured files is sufficient for project-scale memory and avoids infrastructure dependencies (Claude Code observation).
-- **Multi-agent orchestration**: APIVR-Δ is designed as a single-agent methodology; orchestration is a consumer concern.
+- **Multi-agent orchestration**: APIVR-Δ is designed as a single-agent methodology; orchestration is a consumer concern. **Amended (Decision 7):** the single-track cycle remains the default, but under TRANCE authorization + a disjoint-file-set entry gate, APIVR-Δ MAY fan out into a bounded (≤5), worktree-isolated parallel multi-track mode whose merge is single-threaded under continuous parent context (SPEC.md §9). This is parallelism, not unbounded multi-agent orchestration, and it is never the default.
 - **Language/framework specifics**: Asset discovery paths and test commands are parameterized for consumer customization rather than embedded.
