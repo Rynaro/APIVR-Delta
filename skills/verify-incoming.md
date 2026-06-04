@@ -1,20 +1,63 @@
 ---
 name: apivr-verify-incoming
-description: "Load when reading any upstream artefact handed off by ATLAS (scout-report), SPECTRA (spec), VIGIL (root-cause-report), or FORGE (reasoning-report). Checks for a sibling .envelope.json, validates it against ECL v1.0 schemas, and appends a verify_pass or verify_fail trace event. WARN-ONLY on failure — the payload is always processed."
+description: "Load when reading any upstream artefact handed off to APIVR-Δ that carries a sibling .envelope.json. BLOCKING per ECL §6.2.2: the orchestrator MUST have verified the envelope's SHA-256 (eidolons verify-envelope --block / eidolons run --verify) and recorded a verify_pass before dispatch. If no verify_pass exists for the message_id, or a verify_fail is present, REFUSE to process the payload and hand back to the orchestrator. Symmetric receiver gate — every Eidolon enforces it identically."
 methodology: APIVR-Δ
-methodology_version: "3.1"
+methodology_version: "3.4"
 ---
 
-# Verify-Incoming Skill
+# Verify-Incoming Skill — APIVR-Δ (blocking, symmetric)
 
-Opt-in incoming envelope verification for APIVR-Δ v3.1. When a handoff artefact arrives with a sibling `.envelope.json`, this skill validates it and records the outcome. Failures are **warn-only** — the payload is never refused.
+Receiver-side integrity gate for inbound ECL hand-offs. When an upstream
+artefact arrives with a sibling `.envelope.json`, APIVR-Δ MUST NOT process the
+payload unless its SHA-256 integrity has been **verified and passed**. This is
+the **blocking** posture mandated by ECL §6.2.2 ("a receiver SHALL NOT process a
+payload whose integrity tag does not match"). It is **symmetric**: every Eidolon
+in the roster ships this same gate, so no hand-off edge can silently skip it.
+
+> **Posture change (vs. earlier opt-in warn-only):** previous versions logged a
+> warning and processed the payload anyway. That is now superseded. On an
+> unverified or failed envelope this skill **refuses** and hands back to the
+> orchestrator. Provenance is only a differentiator if receivers actually reject
+> tampered payloads — end to end, not just at the orchestrator.
+
+---
+
+## Where the cryptographic check runs (and why the receiver only reads)
+
+APIVR-Δ's tool surface cannot run the SHA-256 gate itself (receiver Eidolons
+have restricted or no Bash). The mechanical check therefore runs **at the
+orchestrator**, once, before APIVR-Δ is dispatched:
+
+```sh
+# Orchestrator pre-step (host LLM, full Bash) — already shipped in the nexus CLI:
+eidolons verify-envelope <artefact>.envelope.json --block      # exit 3 ⇒ tamper/mismatch
+#   …or, when routing through the kernel:
+eidolons run --verify <artefact>.envelope.json --verify-block  # gates the route
+```
+
+The gate writes a `verify_pass` (or `verify_fail`) trace event keyed by
+`message_id`. APIVR-Δ then enforces the result using **only `Read`** — no Bash
+required:
+
+1. Read `.eidolons/.trace/<thread_id>.jsonl` (the `thread_id` is
+   `envelope.thread_id`).
+2. Find the event whose `message_id` matches `envelope.message_id`.
+3. **`verify_pass` with `integrity_method: "sha256"`** → integrity confirmed,
+   proceed to contract conformance below.
+4. **`verify_fail`, or no matching event** → integrity unconfirmed → **REFUSE**
+   (see Failure Mode). Do **not** process the payload.
+
+**Defense-in-depth (optional):** if APIVR-Δ's host happens to grant Bash with
+`eidolons` on PATH, it MAY independently re-run `eidolons verify-envelope
+<env> --block` and abort on a non-zero exit. The orchestrator pre-verify is the
+contract; self-verification is an additional guard, never a replacement.
 
 ---
 
 ## Memory: Recall + Ingest (CRYSTALIUM)
 
-When receiving an upstream handoff, first recall related prior context (if
-CRYSTALIUM available):
+On an inbound hand-off, first recall related prior context (if CRYSTALIUM
+available):
 
 ```
 mcp__crystalium__recall(
@@ -25,9 +68,7 @@ mcp__crystalium__recall(
 )
 ```
 
-Fold relevant hits into context before running the validation pipeline.
-
-After the validation pipeline passes (`verify_pass`), ingest the received
+Only **after** the integrity gate passes (`verify_pass`) ingest the received
 envelope to record the inbound edge:
 
 ```
@@ -37,8 +78,8 @@ mcp__crystalium__ingest(
 )
 ```
 
-**Graceful skip:** if `mcp__crystalium__*` tools are unavailable, skip both
-calls silently and proceed with the standard validation pipeline.
+Never ingest an envelope that failed or skipped verification. **Graceful skip:**
+if `mcp__crystalium__*` tools are unavailable, skip both calls silently.
 
 ---
 
@@ -46,9 +87,8 @@ calls silently and proceed with the standard validation pipeline.
 
 Load this skill automatically when:
 
-- Entering the **A — Analyze** phase AND
-- Reading an upstream artefact at path `P` AND
-- A sibling file `${P%.*}.envelope.json` exists in the same directory
+- Reading an upstream artefact at path `P`, **and**
+- A sibling file `${P%.*}.envelope.json` exists in the same directory.
 
 Detection rule (POSIX sh compatible):
 
@@ -57,133 +97,80 @@ envelope_path="${artefact_path%.*}.envelope.json"
 [ -f "$envelope_path" ] && load_skill "verify-incoming"
 ```
 
-The four inbound artefact kinds that trigger verification:
+If no `.envelope.json` sibling exists, this is a non-ECL artefact — skip the gate
+silently and process normally.
 
-| Kind | From | Contract |
+---
+
+## Inbound edges APIVR-Δ accepts
+
+`to.eidolon` MUST equal `apivr`. `from.eidolon` MUST be a declared upstream
+sender. Performative and `artifact.kind` are validated against the ECL inbound
+contract `contracts/<from>-to-apivr.yaml` (source of truth); the table below
+is the convenience summary:
+
+| from | performative(s) | `artifact.kind` |
 |---|---|---|
-| `scout-report` | atlas | `contracts/atlas-to-apivr.yaml` |
-| `spec` | spectra | `contracts/spectra-to-apivr.yaml` |
-| `root-cause-report` | vigil | `contracts/vigil-to-apivr.yaml` |
-| `reasoning-report` | forge | `contracts/forge-to-apivr.yaml` |
+| `atlas` | PROPOSE, INFORM, REFUSE | `scout-report` |
+| `spectra` | PROPOSE, INFORM, REFUSE | `spec` |
+| `vigil` | PROPOSE, CRITIQUE, INFORM | `root-cause-report` |
+| `forge` | PROPOSE, INFORM, CRITIQUE | `reasoning-report` |
+
+A hand-off whose `from.eidolon` is not listed, or whose performative /
+`artifact.kind` is not allowed for that edge, is an `UNDECLARED_EDGE` /
+`PERFORMATIVE_NOT_ALLOWED` / `ARTIFACT_KIND_NOT_ALLOWED` violation → **REFUSE**.
 
 ---
 
-## Validation Pipeline
+## Failure Mode (BLOCKING — refuse, do not process)
 
-Run in order. Stop at first failure, **emit a warning, and continue processing the payload**.
+On **any** integrity or contract failure:
 
-### Step 1 — Schema shape (`SCHEMA_INVALID`)
+1. Append a `verify_fail` event to `.eidolons/.trace/<thread_id>.jsonl`.
+2. Print to stderr: `[apivr-verify-incoming] REFUSE: <FAILURE_CODE> from <from.eidolon>`.
+3. **Do not process the payload.** Hand control back to the **orchestrator** with
+   a refusal. The orchestrator routes the failure to **VIGIL** (integrity /
+   tamper investigation) or to the **human** — never a silent retry, never a
+   silent process-anyway.
 
-Validate the envelope JSON against `.eidolons/apivr/schemas/ecl-envelope.v1.json`.
+Failure codes: `INTEGRITY_MISMATCH`, `UNVERIFIED` (no `verify_pass` on record),
+`SCHEMA_INVALID`, `UNDECLARED_EDGE`, `PERFORMATIVE_NOT_ALLOWED`,
+`ARTIFACT_KIND_NOT_ALLOWED`.
 
-Using `jq` (shell):
-
-```sh
-jq empty envelope.json 2>/dev/null || { warn "SCHEMA_INVALID: malformed JSON"; return 0; }
-# Then validate required fields: envelope_version, message_id, thread_id, parent_id,
-# from, to, performative, objective, artifact, integrity, trace
-```
-
-If `jq` is absent, treat as best-effort: skip schema check, log advisory.
-
-Failure code: `SCHEMA_INVALID`
-
-### Step 2 — Integrity (`INTEGRITY_MISMATCH`)
-
-Recompute SHA-256 of the payload bytes and compare against `envelope.integrity.value`.
-
-```sh
-computed=$(shasum -a 256 "$payload_path" | awk '{print $1}')
-declared=$(jq -r '.integrity.value' "$envelope_path")
-[ "$computed" = "$declared" ] || { warn "INTEGRITY_MISMATCH"; trace_fail "INTEGRITY_MISMATCH"; return 0; }
-```
-
-Failure code: `INTEGRITY_MISMATCH`
-
-**Note on ECL §6.2.2**: The spec says receivers SHALL NOT process a payload on mismatch. APIVR-Δ adopts the weaker opt-in posture (ECL §0) — warn-only, payload is processed. This is documented in `DESIGN-RATIONALE.md` §ECL adoption.
-
-### Step 3 — Contract match
-
-Check three sub-conditions in order:
-
-**3a — Declared edge** (`UNDECLARED_EDGE`): `from.eidolon` MUST be one of `atlas`, `spectra`, `vigil`, `forge`; `to.eidolon` MUST be `apivr`.
-
-**3b — Performative allowed** (`PERFORMATIVE_NOT_ALLOWED`): check `performative` against the set declared in the relevant inbound contract:
-
-| from | allowed performatives |
-|---|---|
-| atlas | PROPOSE, INFORM, REFUSE |
-| spectra | PROPOSE, INFORM, REFUSE |
-| vigil | PROPOSE, CRITIQUE, INFORM |
-| forge | PROPOSE, INFORM, CRITIQUE |
-
-**3c — Artifact kind allowed** (`ARTIFACT_KIND_NOT_ALLOWED`): check `artifact.kind` against the contract:
-
-| from | allowed kinds |
-|---|---|
-| atlas | scout-report |
-| spectra | spec |
-| vigil | root-cause-report |
-| forge | reasoning-report |
-
----
-
-## Failure Mode (warn-only)
-
-On any failure:
-
-1. Print warning to stderr: `[apivr-verify-incoming] WARN: <FAILURE_CODE> from <from.eidolon>`
-2. Append `verify_fail` event to `.eidolons/.trace/<thread_id>.jsonl`
-3. **Continue processing the payload** (do not refuse, do not abort)
-
-On success:
-
-1. Append `verify_pass` event to `.eidolons/.trace/<thread_id>.jsonl`
-2. Continue with the payload
+On success: append `verify_pass`, then proceed with the payload.
 
 ---
 
 ## Trace Events
 
-Append one JSONL line per verification:
+Append one JSONL line per verification to `.eidolons/.trace/<thread_id>.jsonl`
+(create if absent). The `thread_id` comes from `envelope.thread_id`; if the
+envelope is unparseable, use `unknown`.
 
 **verify_pass:**
 ```json
-{"ts":"<RFC3339>","event":"verify_pass","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"apivr@3.1.0","performative":"<performative>","integrity_method":"sha256"}
+{"ts":"<RFC3339>","event":"verify_pass","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"apivr@3.4","performative":"<performative>","integrity_method":"sha256"}
 ```
 
 **verify_fail:**
 ```json
-{"ts":"<RFC3339>","event":"verify_fail","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"apivr@3.1.0","performative":"<performative>","integrity_method":"sha256","verify_failure_code":"<CODE>"}
+{"ts":"<RFC3339>","event":"verify_fail","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"apivr@3.4","integrity_method":"sha256","verify_failure_code":"<CODE>","decision":"refused"}
 ```
-
-Trace directory: `.eidolons/.trace/<thread_id>.jsonl` (create if absent).
-
-The `thread_id` comes from `envelope.thread_id`. If the envelope is invalid JSON, use a fallback `thread_id` of `unknown`.
-
----
-
-## Token-Budget Advisory (Q2 from spec)
-
-The inbound payload may be large. Apply the contract's declared `token_budget_max` as a soft cap:
-
-| from | token_budget_max |
-|---|---|
-| atlas | 4000 |
-| spectra | 6000 |
-| vigil | 4000 |
-| forge | 3000 |
-
-If `envelope.context_delta.tokens_used > token_budget_max`, log a `CONTEXT_OVER_BUDGET` warning to stderr (warn-only; this does not add a `verify_fail` event).
 
 ---
 
 ## Notes
 
-- Verification is **opt-in**: if no `.envelope.json` sibling is present, skip silently.
-- This skill is **prompt-only** (no `bin/verify-incoming.sh`). Rationale: ATLAS v1.5.0 precedent; promote to a shell helper if bats proves the prompt-only contract is too loose (see `DESIGN-RATIONALE.md`).
-- Schemas referenced: `.eidolons/apivr/schemas/ecl-envelope.v1.json` (installed by `install.sh`).
+- **Blocking, not warn-only.** Refusal is the whole point: a receiver that
+  processes a tamper-flagged payload defeats the provenance guarantee.
+- **Symmetric.** All six Eidolons ship this gate with identical semantics; the
+  only per-Eidolon variation is the inbound-edge table above.
+- **Mechanical gate, single source of truth.** The SHA-256 comparison is the
+  nexus `eidolons verify-envelope` verb (ECL §6.2.2) — never re-implemented or
+  LLM-estimated in this skill.
+- **Read-only enforcement.** The receiver needs only `Read` to consult the
+  trace; this is why the gate is symmetric across tool-less Eidolons.
 
 ---
 
-*Verify-Incoming Skill — warn-only, opt-in, trace-event-anchored*
+*Verify-Incoming Skill — blocking, symmetric, mechanical-gate-backed (ECL §6.2.2)*
