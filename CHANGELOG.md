@@ -7,6 +7,23 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [Unreleased]
+
+### Changed
+- `skills/verify-incoming.md` replaced (warn-only → **blocking, symmetric**):
+  ECL §6.2.2 compliance. The skill now mandates REFUSE on any integrity or
+  contract failure; the payload is **never** processed without a prior
+  `verify_pass`. The orchestrator runs the mechanical SHA-256 gate
+  (`eidolons verify-envelope --block`) and records the trace event before
+  dispatching APIVR-Δ; the receiver enforces the result using only `Read`.
+  `methodology_version` bumped from `3.1` → `3.4` (aligns with newest skill).
+- `tests/verify-incoming.bats` rewritten to assert the blocking posture:
+  old warn-only assertions removed; new assertions verify REFUSE semantics,
+  `decision: refused` in trace events, absence of "payload is always
+  processed" / "warn-only" language, and install-run manifest coverage.
+
+---
+
 ## [3.5.0] — 2026-06-03 — Parallel multi-track mode (TRANCE G4)
 
 ### Added

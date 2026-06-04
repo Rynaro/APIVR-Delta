@@ -1,10 +1,13 @@
 #!/usr/bin/env bats
-# tests/verify-incoming.bats — opt-in incoming envelope verification (S5)
+# tests/verify-incoming.bats — blocking symmetric verify-incoming gate (ECL §6.2.2)
 #
 # Tests the verify-incoming contract. Because the logic is prompt-only (D4),
-# these tests validate the schema/template artefacts that the prompt-skill
-# references, plus the trace-event format, rather than executing a shell
-# verify script.
+# these tests validate the skill posture, schema/template artefacts that the
+# prompt-skill references, plus the trace-event format, rather than executing
+# a shell verify script.
+#
+# POSTURE: blocking (ECL §6.2.2) — not warn-only. Any integrity or contract
+# failure causes REFUSE; the payload is NOT processed.
 
 load helpers.bash
 
@@ -20,7 +23,139 @@ teardown() {
   [[ -n "${TRACE_DIR:-}" && -d "${TRACE_DIR}" ]] && rm -rf "${TRACE_DIR}"
 }
 
-# ── Happy path ──────────────────────────────────────────────────────────────
+# ── Skill posture assertions ─────────────────────────────────────────────────
+
+@test "skill file exists" {
+  [ -f "${REPO_ROOT}/skills/verify-incoming.md" ]
+}
+
+@test "skill declares BLOCKING posture (REFUSE / SHALL NOT / blocking)" {
+  grep -qE 'REFUSE|SHALL NOT|blocking' "${REPO_ROOT}/skills/verify-incoming.md"
+}
+
+@test "skill does NOT declare warn-only posture" {
+  # Negative assertion: catches regressions to the old warn-only contract.
+  # The footer line contains 'warn-only' in a historical reference context;
+  # we target the canonical behavioural phrases that would indicate active
+  # warn-only posture (process anyway, payload is always processed).
+  run grep -cE 'payload is always processed|process the payload anyway|Warn-only on failure' \
+    "${REPO_ROOT}/skills/verify-incoming.md"
+  # Zero matches expected
+  [[ "$output" == "0" ]]
+}
+
+@test "skill does NOT say 'WARN-ONLY on failure' (mode header)" {
+  run grep -c 'WARN-ONLY on failure\|warn-only — the payload\|Failures are \*\*warn-only\*\*' \
+    "${REPO_ROOT}/skills/verify-incoming.md"
+  [[ "$output" == "0" ]]
+}
+
+@test "skill Failure Mode section says BLOCKING — refuse, do not process" {
+  grep -q 'Failure Mode (BLOCKING' "${REPO_ROOT}/skills/verify-incoming.md"
+}
+
+@test "skill says 'Do not process the payload'" {
+  grep -q 'Do not process the payload' "${REPO_ROOT}/skills/verify-incoming.md"
+}
+
+@test "skill REFUSES and hands back to orchestrator on failure" {
+  grep -qE 'Hand control back to the.*(orchestrator|Orchestrator)|hand back to the orchestrator' \
+    "${REPO_ROOT}/skills/verify-incoming.md"
+}
+
+@test "skill references ECL §6.2.2 as the normative source" {
+  grep -q '§6.2.2' "${REPO_ROOT}/skills/verify-incoming.md"
+}
+
+@test "skill verify_fail event has 'decision: refused' field" {
+  grep -q '"decision":"refused"' "${REPO_ROOT}/skills/verify-incoming.md"
+}
+
+@test "skill frontmatter methodology_version is 3.4" {
+  grep -q 'methodology_version: "3.4"' "${REPO_ROOT}/skills/verify-incoming.md"
+}
+
+@test "skill frontmatter name is apivr-verify-incoming" {
+  grep -q 'name: apivr-verify-incoming' "${REPO_ROOT}/skills/verify-incoming.md"
+}
+
+# ── install.sh registration check ───────────────────────────────────────────
+
+@test "install.sh registers verify-incoming in wire_skill loop" {
+  grep -q 'wire_skill "verify-incoming"' "${REPO_ROOT}/install.sh"
+}
+
+@test "install.sh records skills/verify-incoming.md in manifest (add_fw)" {
+  grep -q 'add_fw "skills/verify-incoming.md"' "${REPO_ROOT}/install.sh"
+}
+
+@test "install.sh records verify-incoming in add_skill (skills[] array)" {
+  grep -q 'add_skill "verify-incoming"' "${REPO_ROOT}/install.sh"
+}
+
+# ── install run: exit 0 + manifest line ─────────────────────────────────────
+
+@test "install.sh exits 0 non-interactively into a temp target" {
+  local tmp_target
+  tmp_target="$(mktemp -d)"
+  run bash "${REPO_ROOT}/install.sh" \
+    --target "${tmp_target}" \
+    --hosts none \
+    --non-interactive \
+    --force
+  [ "$status" -eq 0 ]
+  rm -rf "${tmp_target}"
+}
+
+@test "install produces skills/verify-incoming.md in target" {
+  local tmp_target
+  tmp_target="$(mktemp -d)"
+  bash "${REPO_ROOT}/install.sh" \
+    --target "${tmp_target}" \
+    --hosts none \
+    --non-interactive \
+    --force
+  [ -f "${tmp_target}/skills/verify-incoming.md" ]
+  rm -rf "${tmp_target}"
+}
+
+@test "install manifest records skills/verify-incoming.md" {
+  if ! command -v jq &>/dev/null; then
+    skip "jq not available"
+  fi
+  local tmp_target
+  tmp_target="$(mktemp -d)"
+  bash "${REPO_ROOT}/install.sh" \
+    --target "${tmp_target}" \
+    --hosts none \
+    --non-interactive \
+    --force
+  run jq -r '[.files_written[] | select(.path=="skills/verify-incoming.md")] | length' \
+    "${tmp_target}/install.manifest.json"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "1" ]]
+  rm -rf "${tmp_target}"
+}
+
+@test "install manifest skills[] array includes verify-incoming entry" {
+  if ! command -v jq &>/dev/null; then
+    skip "jq not available"
+  fi
+  local tmp_target
+  tmp_target="$(mktemp -d)"
+  bash "${REPO_ROOT}/install.sh" \
+    --target "${tmp_target}" \
+    --hosts none \
+    --non-interactive \
+    --force
+  run jq -r '[.skills[] | select(.name=="verify-incoming")] | length' \
+    "${tmp_target}/install.manifest.json"
+  [ "$status" -eq 0 ]
+  [[ "$output" == "1" ]]
+  rm -rf "${tmp_target}"
+}
+
+# ── Happy path: valid envelope ───────────────────────────────────────────────
 
 @test "happy path: valid scout-report fixture passes schema check" {
   if ! command -v jq &>/dev/null; then
@@ -64,7 +199,7 @@ teardown() {
   local trace_file="${TRACE_DIR}/${thread_id}.jsonl"
   local ts="2026-05-08T00:00:00Z"
   local event_line
-  event_line="{\"ts\":\"${ts}\",\"event\":\"verify_pass\",\"message_id\":\"${thread_id}\",\"thread_id\":\"${thread_id}\",\"from\":\"atlas@1.5.0\",\"to\":\"apivr@3.1.0\",\"performative\":\"PROPOSE\",\"integrity_method\":\"sha256\"}"
+  event_line="{\"ts\":\"${ts}\",\"event\":\"verify_pass\",\"message_id\":\"${thread_id}\",\"thread_id\":\"${thread_id}\",\"from\":\"atlas@1.5.0\",\"to\":\"apivr@3.4\",\"performative\":\"PROPOSE\",\"integrity_method\":\"sha256\"}"
   printf '%s\n' "${event_line}" >> "${trace_file}"
   [ -f "${trace_file}" ]
   if command -v jq &>/dev/null; then
@@ -74,7 +209,7 @@ teardown() {
   fi
 }
 
-# ── Sad path 1: INTEGRITY_MISMATCH ─────────────────────────────────────────
+# ── Sad path 1: INTEGRITY_MISMATCH — blocking, REFUSE ───────────────────────
 
 @test "sad path 1: mutated payload produces different sha256 than envelope value" {
   setup_envelope_fixture "scout-report" "atlas" "1.5.0"
@@ -91,36 +226,39 @@ teardown() {
     skip "jq not available"
   fi
 
-  # They must differ after mutation
+  # They must differ after mutation — this is what triggers REFUSE
   [[ "$recomputed" != "$declared" ]]
 }
 
-@test "sad path 1: INTEGRITY_MISMATCH verify_fail event has correct fields" {
+@test "sad path 1: INTEGRITY_MISMATCH verify_fail event has 'decision:refused'" {
   local thread_id="01926e3a-2c8a-7b04-b3a1-1cf0a7a6d5e1"
   local trace_file="${TRACE_DIR}/${thread_id}.jsonl"
   local ts="2026-05-08T00:00:00Z"
   local event_line
-  event_line="{\"ts\":\"${ts}\",\"event\":\"verify_fail\",\"message_id\":\"${thread_id}\",\"thread_id\":\"${thread_id}\",\"from\":\"atlas@1.5.0\",\"to\":\"apivr@3.1.0\",\"performative\":\"PROPOSE\",\"integrity_method\":\"sha256\",\"verify_failure_code\":\"INTEGRITY_MISMATCH\"}"
+  # blocking posture: verify_fail event includes decision=refused
+  event_line="{\"ts\":\"${ts}\",\"event\":\"verify_fail\",\"message_id\":\"${thread_id}\",\"thread_id\":\"${thread_id}\",\"from\":\"atlas@1.5.0\",\"to\":\"apivr@3.4\",\"integrity_method\":\"sha256\",\"verify_failure_code\":\"INTEGRITY_MISMATCH\",\"decision\":\"refused\"}"
   printf '%s\n' "${event_line}" >> "${trace_file}"
   [ -f "${trace_file}" ]
   if command -v jq &>/dev/null; then
     run jq -r '.verify_failure_code' "${trace_file}"
     [ "$status" -eq 0 ]
     [[ "$output" == "INTEGRITY_MISMATCH" ]]
+    run jq -r '.decision' "${trace_file}"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "refused" ]]
   fi
 }
 
-@test "sad path 1: warn-only — payload still reachable after mismatch" {
-  setup_envelope_fixture "scout-report" "atlas" "1.5.0"
-  # Mutate payload
-  printf 'X' >> "${PAYLOAD_PATH}"
-  # The payload file must still exist and be readable (warn-only — not deleted)
-  [ -f "${PAYLOAD_PATH}" ]
-  run cat "${PAYLOAD_PATH}"
-  [ "$status" -eq 0 ]
+@test "sad path 1: INTEGRITY_MISMATCH — skill says REFUSE, not warn-and-continue" {
+  # Confirm the skill's Failure Mode section specifies REFUSE for integrity failure.
+  grep -q 'REFUSE' "${REPO_ROOT}/skills/verify-incoming.md"
+  # Confirm it does NOT say "return 0" (warn-only shell idiom) in failure context.
+  run grep -c 'INTEGRITY_MISMATCH.*return 0\|warn.*INTEGRITY_MISMATCH.*return 0' \
+    "${REPO_ROOT}/skills/verify-incoming.md"
+  [[ "$output" == "0" ]]
 }
 
-# ── Sad path 2: UNDECLARED_EDGE ─────────────────────────────────────────────
+# ── Sad path 2: UNDECLARED_EDGE — blocking, REFUSE ──────────────────────────
 
 @test "sad path 2: unknown from.eidolon triggers UNDECLARED_EDGE" {
   if ! command -v jq &>/dev/null; then
@@ -141,26 +279,42 @@ teardown() {
   [[ "$is_declared" == "false" ]]
 }
 
-@test "sad path 2: UNDECLARED_EDGE verify_fail event recorded with correct code" {
+@test "sad path 2: UNDECLARED_EDGE verify_fail event has 'decision:refused'" {
   local thread_id="01926e3a-2c8a-7b04-b3a1-1cf0a7a6d5e1"
   local trace_file="${TRACE_DIR}/${thread_id}.jsonl"
   local ts="2026-05-08T00:00:00Z"
   local event_line
-  event_line="{\"ts\":\"${ts}\",\"event\":\"verify_fail\",\"message_id\":\"${thread_id}\",\"thread_id\":\"${thread_id}\",\"from\":\"unknown-eidolon@9.9.9\",\"to\":\"apivr@3.1.0\",\"performative\":\"PROPOSE\",\"integrity_method\":\"sha256\",\"verify_failure_code\":\"UNDECLARED_EDGE\"}"
+  # blocking posture: verify_fail event includes decision=refused
+  event_line="{\"ts\":\"${ts}\",\"event\":\"verify_fail\",\"message_id\":\"${thread_id}\",\"thread_id\":\"${thread_id}\",\"from\":\"unknown-eidolon@9.9.9\",\"to\":\"apivr@3.4\",\"integrity_method\":\"sha256\",\"verify_failure_code\":\"UNDECLARED_EDGE\",\"decision\":\"refused\"}"
   printf '%s\n' "${event_line}" >> "${trace_file}"
   [ -f "${trace_file}" ]
   if command -v jq &>/dev/null; then
     run jq -r '.verify_failure_code' "${trace_file}"
     [ "$status" -eq 0 ]
     [[ "$output" == "UNDECLARED_EDGE" ]]
+    run jq -r '.decision' "${trace_file}"
+    [ "$status" -eq 0 ]
+    [[ "$output" == "refused" ]]
   fi
 }
 
-@test "sad path 2: warn-only — payload still reachable after UNDECLARED_EDGE" {
-  setup_envelope_fixture "scout-report" "unknown-eidolon" "9.9.9"
-  [ -f "${PAYLOAD_PATH}" ]
-  run cat "${PAYLOAD_PATH}"
-  [ "$status" -eq 0 ]
+@test "sad path 2: UNDECLARED_EDGE — skill says REFUSE, not warn-and-continue" {
+  grep -q 'UNDECLARED_EDGE' "${REPO_ROOT}/skills/verify-incoming.md"
+  # Confirm skill Failure Mode is blocking for this code too.
+  grep -q 'REFUSE' "${REPO_ROOT}/skills/verify-incoming.md"
+}
+
+# ── Sad path 3: no verify_pass in trace (UNVERIFIED) — blocking, REFUSE ─────
+
+@test "sad path 3: UNVERIFIED failure code listed in skill" {
+  grep -q 'UNVERIFIED' "${REPO_ROOT}/skills/verify-incoming.md"
+}
+
+@test "sad path 3: skill says REFUSE when no verify_pass on record" {
+  # Skill must describe refusing when no verify_pass event exists for the message_id.
+  grep -q 'no matching event\|verify_fail.*REFUSE\|REFUSE.*verify_fail\|REFUSE.*Failure Mode' \
+    "${REPO_ROOT}/skills/verify-incoming.md" || \
+  grep -q 'UNVERIFIED.*REFUSE\|REFUSE' "${REPO_ROOT}/skills/verify-incoming.md"
 }
 
 # ── Schema fixture validation ────────────────────────────────────────────────
