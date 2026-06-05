@@ -9,6 +9,13 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+## [3.6.1] — 2026-06-05
+
+### Fixed
+- **Version-stamp hygiene.** The `v3.6.0` tag shipped a tree internally stamped `3.5.0` (SPEC.md, AGENTS.md, install.sh EIDOLON_VERSION, tests/install.bats) — corrected to `3.6.1` (forward; the existing `v3.6.0` tag is NOT moved). No behaviour change. NOT changed here: the ECL spec-vs-wire naming (agent.md "ECL v1.0" vs SPEC "ECL v2.0" vs ECL_VERSION "2.0") is the nexus dossier ecosystem-wide V3 item, to be reconciled across all Eidolons + roster + schema in one coordinated change.
+
+## [3.6.0] — 2026-06-04
+
 ### Changed
 - `skills/verify-incoming.md` replaced (warn-only → **blocking, symmetric**):
   ECL §6.2.2 compliance. The skill now mandates REFUSE on any integrity or
