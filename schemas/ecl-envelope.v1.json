@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.7.0/schemas/ecl-envelope.v1.json",
+  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.7.1/schemas/ecl-envelope.v1.json",
   "title": "ECL envelope v1 (vendored)",
   "description": "Vendored copy of eidolons-ecl/schemas/envelope.v1.json for self-contained APIVR-Delta validation. Validates the ECL v1.0 envelope sidecar written next to every emitted APIVR-Delta artefact. Source-of-truth is the central ECL spec at Rynaro/eidolons-ecl; re-vendor when ECL publishes a new envelope schema version. Performative enum is inlined (not $ref'd) per ATLAS v1.5.0 precedent.",
   "type": "object",

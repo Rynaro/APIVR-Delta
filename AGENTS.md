@@ -1,6 +1,6 @@
 ---
 name: apivr
-version: 3.7.0
+version: 3.7.1
 methodology: APIVR-Δ
 role: feature-implementation — Evidence-grounded feature implementation for brownfield codebases
 handoffs:

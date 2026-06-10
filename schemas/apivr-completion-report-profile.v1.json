@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.7.0/schemas/apivr-completion-report-profile.v1.json",
+  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.7.1/schemas/apivr-completion-report-profile.v1.json",
   "title": "ECL apivr-completion-report profile v1",
   "description": "Vendored from eidolons-ecl/schemas/per-eidolon/apivr-completion-report.v1.json (ECL v1.0.0). APIVR-Δ emit when work is complete; consumed by IDG. Contract: apivr-to-idg.yaml.",
   "allOf": [

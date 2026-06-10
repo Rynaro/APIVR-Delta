@@ -11,6 +11,26 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [3.7.1] — 2026-06-10 — Broad Bash allowlist (retire PARENT_FILLS_* envelope placeholders)
+
+### Changed
+- `.claude/agents/apivr.md` (checked-in) and `install.sh` heredoc: tools line changed from
+  `Bash(git:*), Bash(rspec:*), Bash(jest:*), Bash(pytest:*), Bash(go test:*)` to `Bash`.
+  Enumerated prefixes were repeatedly too narrow: `shasum`/`wc` were excluded, forcing
+  the parent orchestrator to patch every ECL envelope's `sha256`, `size_bytes`, and
+  `integrity.value` via `PARENT_FILLS_*` placeholders after every handoff. Additionally,
+  `make`, `bats`, `shellcheck`, and other repo-tooling commands were unavailable in
+  shell-based target projects. Coder scope boundaries are enforced by methodology P0 rules
+  (never modify files outside declared scope; escalate on 3-failure-same-category), not by
+  a restrictive tool prefix list.
+- `methodology_version` in checked-in `.claude/agents/apivr.md` corrected from stale `"3.3"` to `"3.7"`.
+- Version stamp swept to 3.7.1 across all canonical homes (same set as prior stamp sweeps).
+
+### Not changed
+- `ECL_VERSION_VAL`, `ECL_VERSION` file, envelope_version values — ecosystem-coordinated V3 item.
+
+---
+
 ## [3.7.0] — 2026-06-10 — Version-stamp hygiene + canonical skill template
 
 ### Changed
