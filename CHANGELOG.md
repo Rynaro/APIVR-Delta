@@ -9,6 +9,37 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ## [Unreleased]
 
+---
+
+## [3.7.0] — 2026-06-10 — Version-stamp hygiene + canonical skill template
+
+### Changed
+- Version stamps swept to 3.7.0 across all canonical homes: `install.sh` `EIDOLON_VERSION`, `AGENTS.md` frontmatter `version:`, `SPEC.md` header and §7/§8 self-references, `README.md` title (unversioned; version now in a single explicit badge line).
+- `AGENTS.md`: `methodology_version:` removed per D1 (drift surface; nothing reads it); cycle heading unversioned (`## APIVR-Δ Cycle`).
+- `agent.md`: cycle heading unversioned (`## APIVR-Δ Cycle`).
+- All 6 skills (`context-engineering`, `failure-recovery`, `memory-management`, `methodology`, `parallel-tracks`, `verify-incoming`) normalized to canonical D2 frontmatter: `name` + `description` (single physical line) + `metadata: {methodology, phase}`; `methodology_version` removed.
+- All skills now have a `## When to use` section (minimal addition; bodies preserved verbatim).
+- `skills/methodology.md`: H1 unversioned (`# APIVR-Δ Methodology`); footer unversioned.
+- Trace event version placeholders in `skills/verify-incoming.md`: `apivr@3.4` → `apivr@<version>` per D1 (no release-version strings in skill bodies).
+- `templates/*.envelope.json` (3 files): `from.version` `3.1.0` → `3.7.0`.
+- `templates/inbound/*.fixture.json` (4 files): `to.version` `3.1.0` → `3.7.0`.
+- `tests/helpers.bash`: default eidolon_version `3.1.0` → `3.7.0`; fixture `to.version` updated.
+- `tests/install.bats`: header comment + test name + grep target `3.5.0` → `3.7.0`.
+- `tests/emit-completion-report.bats`: fixture version `3.1.0` → `3.7.0`.
+- `tests/verify-incoming.bats`: `methodology_version: "3.4"` assertion re-targeted to `metadata.methodology: APIVR-Δ` (D2 contract change).
+- All 8 schemas: `$id` URLs `/v3.1.0/` → `/v3.7.0/`.
+- `examples/install.manifest.json`: version `3.3.0` → `3.7.0`; added missing `parallel-tracks` skill entry + `tracks-merge-report.md` template entry (EIIS I5 compliance).
+
+### Fixed (content)
+- `SPEC.md §8`, `CLAUDE.md`, and `skills/context-engineering.md`: verify-incoming posture was described as "opt-in, warn-only — payload is always processed" — corrected to **blocking** (matching the shipped skill and ECL §6.2.2). ECL version numbers in same sentences left verbatim (ecosystem-coordinated V3 item).
+
+### Not changed (out of scope)
+- `install.sh:8 ECL_VERSION_VAL="1.0"`, `ECL_VERSION` file, envelope_version values, "ECL v1.0" prose in `agent.md`/`CLAUDE.md` — ecosystem-coordinated V3 item, deliberately untouched.
+
+---
+
+## [3.6.0] — 2026-06-05 — Blocking symmetric verify-incoming gate (ECL §6.2.2)
+
 ### Changed
 - `skills/verify-incoming.md` replaced (warn-only → **blocking, symmetric**):
   ECL §6.2.2 compliance. The skill now mandates REFUSE on any integrity or
@@ -302,7 +333,7 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
-## [Unreleased] — EIIS-1.0 conformance
+## [pre-3.0.0] — EIIS-1.0 conformance (historical, pre-release)
 
 ### Added
 - `agent.md` — condensed always-loaded entry point (≤1000 tokens) with installed-path references

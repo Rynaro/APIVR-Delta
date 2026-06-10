@@ -1,8 +1,9 @@
 ---
 name: apivr-verify-incoming
-description: "Load when reading any upstream artefact handed off to APIVR-Δ that carries a sibling .envelope.json. BLOCKING per ECL §6.2.2: the orchestrator MUST have verified the envelope's SHA-256 (eidolons verify-envelope --block / eidolons run --verify) and recorded a verify_pass before dispatch. If no verify_pass exists for the message_id, or a verify_fail is present, REFUSE to process the payload and hand back to the orchestrator. Symmetric receiver gate — every Eidolon enforces it identically."
-methodology: APIVR-Δ
-methodology_version: "3.4"
+description: "Blocking symmetric receiver gate for inbound ECL hand-offs to APIVR-Δ. Use when reading any upstream artefact that carries a sibling .envelope.json — REFUSE and hand back to the orchestrator if no verify_pass exists for the message_id or a verify_fail is present. Do NOT use for outbound emit or non-ECL artefacts."
+metadata:
+  methodology: APIVR-Δ
+  phase: cross-phase
 ---
 
 # Verify-Incoming Skill — APIVR-Δ (blocking, symmetric)
@@ -19,6 +20,10 @@ in the roster ships this same gate, so no hand-off edge can silently skip it.
 > unverified or failed envelope this skill **refuses** and hands back to the
 > orchestrator. Provenance is only a differentiator if receivers actually reject
 > tampered payloads — end to end, not just at the orchestrator.
+
+## When to use
+
+Load automatically when reading an upstream artefact at path P and a sibling `${P%.*}.envelope.json` exists. See the Trigger section below for the detection rule. Do NOT load for non-ECL artefacts (no sibling envelope) or for outbound emission.
 
 ---
 
@@ -149,12 +154,12 @@ envelope is unparseable, use `unknown`.
 
 **verify_pass:**
 ```json
-{"ts":"<RFC3339>","event":"verify_pass","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"apivr@3.4","performative":"<performative>","integrity_method":"sha256"}
+{"ts":"<RFC3339>","event":"verify_pass","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"apivr@<version>","performative":"<performative>","integrity_method":"sha256"}
 ```
 
 **verify_fail:**
 ```json
-{"ts":"<RFC3339>","event":"verify_fail","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"apivr@3.4","integrity_method":"sha256","verify_failure_code":"<CODE>","decision":"refused"}
+{"ts":"<RFC3339>","event":"verify_fail","message_id":"<uuid>","thread_id":"<uuid>","from":"<eidolon>@<version>","to":"apivr@<version>","integrity_method":"sha256","verify_failure_code":"<CODE>","decision":"refused"}
 ```
 
 ---

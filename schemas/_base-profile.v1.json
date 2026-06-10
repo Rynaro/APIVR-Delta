@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.1.0/schemas/_base-profile.v1.json",
+  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.7.0/schemas/_base-profile.v1.json",
   "title": "ECL per-Eidolon profile base v1",
   "description": "Vendored from eidolons-ecl/schemas/per-eidolon/_base-profile.v1.json (ECL v1.0.0). Common YAML frontmatter required of any artefact wrapped by an ECL envelope. Each kind-specific profile extends this with its own required keys. ECL v1.0 §3.1.",
   "type": "object",

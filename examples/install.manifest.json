@@ -1,6 +1,6 @@
 {
   "eidolon": "apivr",
-  "version": "3.3.0",
+  "version": "3.7.0",
   "methodology": "APIVR-Δ",
   "installed_at": "2026-05-26T12:00:00Z",
   "target": "./.eidolons/apivr",
@@ -34,6 +34,13 @@
       "source_sha256": "0000000000000000000000000000000000000000000000000000000000000004",
       "vendor_path": ".claude/skills/apivr-methodology/SKILL.md",
       "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000004"
+    },
+    {
+      "name": "parallel-tracks",
+      "source_path": ".eidolons/apivr/skills/parallel-tracks.md",
+      "source_sha256": "0000000000000000000000000000000000000000000000000000000000000006",
+      "vendor_path": ".claude/skills/apivr-parallel-tracks/SKILL.md",
+      "vendor_sha256": "0000000000000000000000000000000000000000000000000000000000000006"
     },
     {
       "name": "verify-incoming",
@@ -88,9 +95,21 @@
       "mode": "created"
     },
     {
+      "path": "skills/parallel-tracks.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000006",
+      "role": "skill",
+      "mode": "created"
+    },
+    {
       "path": "skills/verify-incoming.md",
       "sha256": "0000000000000000000000000000000000000000000000000000000000000005",
       "role": "skill",
+      "mode": "created"
+    },
+    {
+      "path": "templates/tracks-merge-report.md",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000007",
+      "role": "template",
       "mode": "created"
     },
     {

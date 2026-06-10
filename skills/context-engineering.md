@@ -1,13 +1,18 @@
 ---
 name: apivr-context-engineering
-description: "Load at the start of the APIVR-Δ Analyze phase. Techniques for building a repo map, running progressive disclosure, and maximising context relevance for coding tasks. Use whenever you need to understand unfamiliar code before editing it, or when an existing Discovery Report feels under-grounded."
-methodology: APIVR-Δ
-methodology_version: "3.0"
+description: "Techniques for building a repo map, progressive disclosure, and maximising context relevance for coding tasks. Use at the start of the APIVR-Δ Analyze phase, whenever you need to understand unfamiliar code before editing it, or when a Discovery Report feels under-grounded."
+metadata:
+  methodology: APIVR-Δ
+  phase: A-Analyze
 ---
 
 # Context Engineering Skill
 
 Techniques for maximizing the quality and relevance of information available during coding tasks. The primary constraint on agent performance is not reasoning capability but context quality.
+
+## When to use
+
+Load at the start of the APIVR-Δ Analyze phase. Also load when you need to understand unfamiliar code before editing it, or when a Discovery Report feels under-grounded. Do NOT load during Implement or Verify unless context pressure signals appear.
 
 ---
 
@@ -230,7 +235,7 @@ If present:
 1. Load `skills/verify-incoming.md`.
 2. Run the validation pipeline (schema → integrity → contract match).
 3. On `verify_pass`, proceed.
-4. On `verify_fail`, emit the warning to stderr, append the failure code to `.eidolons/.trace/<thread_id>.jsonl`, **and continue** — verification is opt-in / warn-only at ECL v1.0.
+4. On `verify_fail`, **REFUSE** — do not process the payload. Append the failure code to `.eidolons/.trace/<thread_id>.jsonl` and hand control back to the orchestrator. See `skills/verify-incoming.md` for the blocking gate protocol.
 
 If the sibling envelope is absent, proceed without verification. This is expected during the ECL rollout window when upstream Eidolons may not yet have adopted.
 
