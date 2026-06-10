@@ -8,7 +8,7 @@ Load order for this repository:
 4. `skills/context-engineering.md` — repo mapping and progressive disclosure (load during Analyze)
 5. `skills/failure-recovery.md` — failure taxonomy and recovery protocol (load on first failure)
 6. `skills/memory-management.md` — episodic memory protocol (load at session start/end)
-7. `skills/verify-incoming.md` — opt-in ECL envelope verification (load when reading an upstream artefact with a sibling `.envelope.json`)
+7. `skills/verify-incoming.md` — blocking ECL envelope verification (load when reading an upstream artefact with a sibling `.envelope.json`; REFUSE on verify_fail per ECL §6.2.2)
 8. `templates/discovery-report.md` — Analyze phase output skeleton (load during Analyze)
 9. `templates/execution-plan.md` — Plan phase output skeleton (load during Plan)
 10. `templates/reflect-entry.md` — Reflect phase output skeleton (load on failure)
@@ -21,7 +21,7 @@ This Eidolon targets ECL v1.0 (see `ECL_VERSION`). Three emit kinds:
 - `repair-failed-report` (to VIGIL, Reflect-phase 3-failure escalation, `templates/repair-failed-report.envelope.json`)
 - `reasoning-request` (to FORGE, Plan-phase consultation, `templates/reasoning-request.envelope.json`)
 
-Inbound envelope verification is opt-in and warn-only — see `skills/verify-incoming.md`.
+Inbound envelope verification is **blocking** (ECL §6.2.2) — see `skills/verify-incoming.md`. On any integrity or contract failure, REFUSE and hand back to the orchestrator.
 
 ## Consumer project usage
 

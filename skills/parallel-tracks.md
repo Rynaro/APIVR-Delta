@@ -1,8 +1,9 @@
 ---
 name: apivr-parallel-tracks
-description: "Load ONLY under TRANCE authorization when the Plan phase yields N independent, non-overlapping implementation tracks (disjoint file sets). Operationalizes the TRANCE G4 form — parallel multi-track implementation in mandatory git-worktree isolation, max 5 clean-context tracks, a per-track verifier cascade, a non-fungible per-track ≤3 reflection budget, explicit stop conditions, and a single-threaded merge/aggregation step. Absent TRANCE gating, APIVR-Δ runs exactly as today: single-track A→P→I→V→Δ/R."
-methodology: APIVR-Δ
-methodology_version: "3.4"
+description: "Operationalizes the TRANCE G4 form — parallel multi-track implementation in mandatory git-worktree isolation, max 5 clean-context tracks, a per-track verifier cascade, a non-fungible per-track ≤3 reflection budget, and a single-threaded merge step. Use ONLY under TRANCE authorization when the Plan phase yields N independent, non-overlapping implementation tracks (disjoint file sets). Do NOT use for single-track tasks or absent TRANCE gating."
+metadata:
+  methodology: APIVR-Δ
+  phase: I-Implement
 ---
 
 # Parallel Multi-Track Mode (TRANCE G4)
@@ -10,6 +11,12 @@ methodology_version: "3.4"
 Operationalizes the TRANCE G4 form for APIVR-Δ: **parallel feature branches in
 isolated git worktrees + per-track verifier cascade + a mandatory
 single-threaded merge/aggregation step.**
+
+## When to use
+
+Load ONLY under TRANCE authorization (both a complexity flag AND a stakes flag, cortex C6) when the Plan phase yielded N independent implementation tracks with verified disjoint file sets. Do NOT load for single-track tasks or when TRANCE authorization is absent.
+
+---
 
 > **Single-track is the default.** The standard A→P→I→V→Δ/R cycle remains the
 > default for every task. This mode activates ONLY under TRANCE authorization

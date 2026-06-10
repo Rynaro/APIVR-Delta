@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.1.0/schemas/root-cause-report-profile.v1.json",
+  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.7.0/schemas/root-cause-report-profile.v1.json",
   "title": "ECL root-cause-report profile v1",
   "description": "Vendored from eidolons-ecl/schemas/per-eidolon/root-cause-report.v1.json (ECL v1.0.0). Inbound verification: VIGIL-emitted root-cause report received by APIVR-Δ. Contract: vigil-to-apivr.yaml.",
   "allOf": [

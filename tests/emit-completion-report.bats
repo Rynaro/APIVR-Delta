@@ -4,7 +4,7 @@
 load helpers.bash
 
 setup() {
-  setup_envelope_fixture "apivr-completion-report" "apivr" "3.1.0"
+  setup_envelope_fixture "apivr-completion-report" "apivr" "3.7.0"
 }
 
 teardown() {

@@ -1,8 +1,9 @@
 ---
 name: apivr-memory-management
-description: "Load at APIVR-Δ session start, session end, or when you notice a repeating pattern across tasks. CRYSTALIUM-primary memory protocol: when mcp__crystalium__* tools are available, route ALL memory through CRYSTALIUM (recall/commit/ingest/plan_checkpoint/session_end). The local agents/memories/*.md files are the standalone fallback for when CRYSTALIUM is absent — EIIS conformance. Never write both."
-methodology: APIVR-Δ
-methodology_version: "3.4"
+description: "CRYSTALIUM-primary memory protocol for APIVR-Δ: when mcp__crystalium__* tools are available, route ALL memory through CRYSTALIUM (recall/commit/ingest/plan_checkpoint/session_end); the local agents/memories/*.md files are the standalone fallback. Use at session start, session end, or when a repeating pattern is noticed across tasks. Never write to both."
+metadata:
+  methodology: APIVR-Δ
+  phase: cross-phase
 ---
 
 # Memory Management Skill
@@ -15,6 +16,10 @@ uninstalled). **Never write to both in the same session.**
 See `methodology/cortex/memory-protocol.md` (nexus) for the full
 layer × tier matrix, Dream consolidation knobs, and `plan_checkpoint`/
 `plan_replan` semantics.
+
+## When to use
+
+Load at APIVR-Δ session start (before Analyze), at session end (after Delta/Reflect), or when a repeating pattern is noticed across tasks. Also load mid-session when you need to route a write to CRYSTALIUM vs. the local fallback.
 
 ---
 

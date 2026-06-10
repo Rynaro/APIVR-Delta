@@ -11,7 +11,7 @@ TEMPLATES_DIR="${REPO_ROOT}/templates"
 setup_envelope_fixture() {
   local kind="$1"
   local from_eidolon="${2:-apivr}"
-  local eidolon_version="${3:-3.1.0}"
+  local eidolon_version="${3:-3.7.0}"
 
   FIXTURE_DIR="$(mktemp -d)"
 
@@ -38,7 +38,7 @@ setup_envelope_fixture() {
   \"thread_id\":  \"01926e3a-2c8a-7b04-b3a1-1cf0a7a6d5e1\",
   \"parent_id\":  null,
   \"from\": { \"eidolon\": \"${from_eidolon}\", \"version\": \"${eidolon_version}\" },
-  \"to\":   { \"eidolon\": \"apivr\",            \"version\": \"3.1.0\" },
+  \"to\":   { \"eidolon\": \"apivr\",            \"version\": \"3.7.0\" },
   \"performative\": \"PROPOSE\",
   \"edge_origin\": \"roster\",
   \"objective\": \"Test fixture envelope for ${kind}.\",

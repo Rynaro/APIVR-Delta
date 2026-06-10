@@ -71,8 +71,9 @@ teardown() {
   grep -q '"decision":"refused"' "${REPO_ROOT}/skills/verify-incoming.md"
 }
 
-@test "skill frontmatter methodology_version is 3.4" {
-  grep -q 'methodology_version: "3.4"' "${REPO_ROOT}/skills/verify-incoming.md"
+@test "skill frontmatter has metadata block with methodology" {
+  grep -q 'metadata:' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q 'methodology: APIVR' "${REPO_ROOT}/skills/verify-incoming.md"
 }
 
 @test "skill frontmatter name is apivr-verify-incoming" {

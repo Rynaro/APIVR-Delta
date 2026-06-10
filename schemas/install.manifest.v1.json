@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.1.0/schemas/install.manifest.v1.json",
+  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.7.0/schemas/install.manifest.v1.json",
   "title": "EIIS install.manifest v1",
   "description": "Written by install.sh into <target>/install.manifest.json after a successful install. Defined by EIIS v1.0 §3.",
   "type": "object",

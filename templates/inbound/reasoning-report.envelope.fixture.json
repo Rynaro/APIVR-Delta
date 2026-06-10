@@ -4,7 +4,7 @@
   "thread_id":  "01926e3a-2c8a-7b04-b3a1-1cf0a7a6d5e1",
   "parent_id":  "01926e3b-2c8a-7b04-b3a1-1cf0a7a6d5e2",
   "from": { "eidolon": "forge", "version": "1.2.1" },
-  "to":   { "eidolon": "apivr", "version": "3.1.0" },
+  "to":   { "eidolon": "apivr", "version": "3.7.0" },
   "performative": "PROPOSE",
   "edge_origin": "roster",
   "objective": "Return reasoning report to APIVR-Δ that requested consultation.",

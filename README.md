@@ -1,4 +1,7 @@
-# APIVR-Δ v3.0 — Agentic Coding Methodology
+# APIVR-Δ — Agentic Coding Methodology
+
+**Current version: 3.7.0** — See [CHANGELOG.md](CHANGELOG.md) for release history.
+
 
 Evidence-grounded, test-anchored, context-aware feature implementation for brownfield codebases.
 
