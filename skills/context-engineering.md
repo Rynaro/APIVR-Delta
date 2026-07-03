@@ -226,7 +226,7 @@ Before reading a full file, try these cheaper approaches:
 
 ---
 
-## Verify Upstream Envelopes (ECL v1.0)
+## Verify Upstream Envelopes (ECL v2.0)
 
 When the Analyze phase ingests an artefact handed off by ATLAS (`scout-report`), SPECTRA (`spec`), VIGIL (`root-cause-report`), or FORGE (`reasoning-report`), check for a sibling `${P%.*}.envelope.json` next to the payload.
 

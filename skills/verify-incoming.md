@@ -168,13 +168,13 @@ envelope is unparseable, use `unknown`.
 
 - **Blocking, not warn-only.** Refusal is the whole point: a receiver that
   processes a tamper-flagged payload defeats the provenance guarantee.
-- **Symmetric.** All six Eidolons ship this gate with identical semantics; the
-  only per-Eidolon variation is the inbound-edge table above.
+- **Symmetric.** All Eidolons in the roster ship this gate with identical
+  semantics; the only per-Eidolon variation is the inbound-edge table above.
 - **Mechanical gate, single source of truth.** The SHA-256 comparison is the
   nexus `eidolons verify-envelope` verb (ECL §6.2.2) — never re-implemented or
   LLM-estimated in this skill.
 - **Read-only enforcement.** The receiver needs only `Read` to consult the
-  trace; this is why the gate is symmetric across tool-less Eidolons.
+  trace; this is why the gate is symmetric across tool-limited Eidolons.
 
 ---
 

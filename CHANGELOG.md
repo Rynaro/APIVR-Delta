@@ -11,6 +11,92 @@ Versioning: [Semantic Versioning](https://semver.org/)
 
 ---
 
+## [3.8.0] — 2026-07-03 — ECL v2.0 adoption + ESL maker≠checker hop
+
+Closes the "ecosystem-coordinated V3 item" deferred across the 3.6.0/3.7.0/3.7.1
+entries below: APIVR-Δ now targets ECL v2.0 end-to-end, and gains its first
+ESL lifecycle hop.
+
+### Changed
+- `install.sh`: `ECL_VERSION_VAL` `"1.0"` → `"2.0"`; vendored envelope schema
+  reference retargeted from `schemas/ecl-envelope.v1.json` to the new
+  `schemas/ecl-envelope.v2.json`.
+- `schemas/ecl-envelope.v1.json` replaced by `schemas/ecl-envelope.v2.json`
+  (re-vendored from `eidolons-ecl@v2.0.0` `schemas/envelope.v2.json`; adds the
+  optional `ise` trust-hierarchy block, `$defs`, and $id per ATLAS v1.5.0
+  vendoring conventions — performative enum stays inlined, not `$ref`'d).
+- `agent.md`, `CLAUDE.md`: "targets ECL v1.0" prose corrected to "targets ECL
+  v2.0" (SPEC.md, AGENTS.md frontmatter, and `memory-management.md` already
+  said v2.0 — this closes the last of the drifted surfaces named in the
+  3.7.0/3.7.1 "Not changed" notes below).
+- `skills/context-engineering.md`, `skills/failure-recovery.md`: section
+  headings `(ECL v1.0)` → `(ECL v2.0)`.
+- `skills/verify-incoming.md`: converged on the Kupo reference copy of the
+  blocking ECL gate — dropped the stale hardcoded "six Eidolons" roster count
+  in favour of "All Eidolons in the roster", and "tool-less" → "tool-limited"
+  for accuracy. APIVR-Δ's accepted-artefact table (atlas/spectra/vigil/forge)
+  preserved verbatim; posture was already blocking/symmetric (v3.6.0), so this
+  is a wording convergence, not a behaviour change.
+- `templates/apivr-completion-report.envelope.json`,
+  `templates/reasoning-request.envelope.json`,
+  `templates/repair-failed-report.envelope.json`: `envelope_version`
+  `"1.0"` → `"2.0"`; each gains an `ise` block —
+  `assertion_grade: "self-attested"` (APIVR-Δ's V-phase is self-review; until
+  the new esl-hop checker pass runs, completion is not externally validated —
+  this is an honest downgrade from what a bare "PROPOSE" implied, not a
+  regression), `receiver_authorization: {auto_route: true, auto_merge: false,
+  auto_deploy: false}`, and `provenance.methodology_version:
+  "apivr-3.7.1"` (matches each template's own un-bumped `from.version`; see
+  "Not changed" below).
+- `templates/inbound/*.fixture.json` (4 files): `envelope_version` `"1.0"` →
+  `"2.0"` for wire-format consistency with the vendored v2 schema.
+
+### Added
+- `skills/esl-hop.md` (NEW): the ESL lifecycle hop. APIVR-Δ is the MAKER at
+  `in_progress`; on V-phase completion of an ESL-tracked change it no longer
+  self-verifies — it hands off via ECL PROPOSE to a CHECKER (Kupo for
+  localized ≤2-file, named-verifier-backed outcomes via the existing
+  `apivr-to-kupo` edge, else VIGIL / a named external verifier), and the
+  checker's fresh-context verification advances the lifecycle (ESL C4
+  mechanical maker≠checker enforcement; C8 advisory fresh-context check).
+  This closes APIVR-Δ's designation as Vivi's weak-host fallback without a
+  checker on the success path. Wired into `install.sh` (`wire_skill`,
+  `add_fw`, `add_skill`) alongside the existing 6 skills.
+- `agent.md`: Skill Loading table gains a row for `skills/esl-hop.md`; ECL
+  section gains one additive sentence pointing at the hop. Additive only —
+  the methodology cycle (A→P→I→V→Δ/R) is unchanged.
+- `tests/esl-hop.bats` (NEW): skill-content + install-wiring assertions for
+  the hop.
+- `tests/install.bats`: vendored-v2-schema assertions (file presence,
+  absence of the superseded v1 file, `ise` `$defs` shape); `EIDOLON_VERSION`
+  / `ECL_VERSION_VAL` assertions retargeted to 3.8.0 / 2.0.
+- `tests/emit-completion-report.bats`, `tests/emit-reasoning-request.bats`,
+  `tests/emit-repair-failed-report.bats`: `envelope_version` and `ise`
+  assertions per template, plus a jsonschema structural validation of each
+  template against the vendored v2 schema (skips gracefully when the
+  `jsonschema` Python module is unavailable).
+- `tests/helpers.bash`: `setup_envelope_fixture` and `assert_envelope_valid`
+  retargeted to `envelope_version: "2.0"`.
+
+### Not changed (out of scope, explicit)
+- Template/fixture `from.version` and `to.version` fields, `.claude/agents/apivr.md`
+  `methodology_version`, and `examples/install.manifest.json`'s top-level
+  `version` stay at their prior values — version-stamp bumps this release are
+  scoped to the 5 canonical homes only (`install.sh` `EIDOLON_VERSION`,
+  `AGENTS.md` frontmatter `version:`, `SPEC.md` header + §7/§8
+  self-references, `README.md`, this changelog). `ise.provenance.methodology_version`
+  in the 3 templates therefore reads `"apivr-3.7.1"`, matching each
+  template's own un-bumped `from.version`.
+- `examples/install.manifest.json`'s `comm.envelope_version` bumped to
+  `"2.0"` and its `skills`/`files_written` arrays gained the `esl-hop` entry
+  (structural accuracy fix — install.sh now emits it), but nothing else in
+  that file changed.
+- VIGIL/FORGE inbound-verify posture, `DESIGN-RATIONALE.md`'s Future-work
+  (F1/F2) and "Why verify-incoming is warn-only" sections — pre-existing
+  drift unrelated to this wave; left for a future pass.
+
+---
+
 ## [3.7.1] — 2026-06-10 — Broad Bash allowlist (retire PARENT_FILLS_* envelope placeholders)
 
 ### Changed

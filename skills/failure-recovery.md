@@ -325,7 +325,7 @@ When escalating, provide this structured output:
 
 ---
 
-## Escalation Envelope (ECL v1.0)
+## Escalation Envelope (ECL v2.0)
 
 When the 3-failure-same-category threshold fires, the ESCALATE step MUST emit a `repair-failed-report.envelope.json` next to the failure log. This is the contract APIVR-Δ uses to hand off to VIGIL (`apivr-to-vigil.yaml`).
 

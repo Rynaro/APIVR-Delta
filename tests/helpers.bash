@@ -33,7 +33,7 @@ setup_envelope_fixture() {
 
   ENVELOPE_PATH="${FIXTURE_DIR}/payload.envelope.json"
   printf '%s' "{
-  \"envelope_version\": \"1.0\",
+  \"envelope_version\": \"2.0\",
   \"message_id\": \"01926e3a-2c8a-7b04-b3a1-1cf0a7a6d5e1\",
   \"thread_id\":  \"01926e3a-2c8a-7b04-b3a1-1cf0a7a6d5e1\",
   \"parent_id\":  null,
@@ -73,7 +73,7 @@ assert_envelope_valid() {
   jq empty "${envelope_path}" || return 1
   local version
   version="$(jq -r '.envelope_version' "${envelope_path}")"
-  [[ "$version" == "1.0" ]] || { echo "envelope_version mismatch: ${version}" >&3; return 1; }
+  [[ "$version" == "2.0" ]] || { echo "envelope_version mismatch: ${version}" >&3; return 1; }
   return 0
 }
 
