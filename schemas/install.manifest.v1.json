@@ -141,8 +141,8 @@
       "properties": {
         "envelope_version": {
           "type": "string",
-          "pattern": "^1\\.0(\\.\\d+)?$",
-          "description": "ECL spec version this Eidolon targets. ECL v1.0 §7.2."
+          "pattern": "^(1\\.[012]|2\\.[01])(\\.\\d+)?$",
+          "description": "ECL spec version this Eidolon targets. ECL v2.0 §7.2 (v1.x accepted through the §7.3 compatibility window)."
         },
         "emits": {
           "type": "array",
