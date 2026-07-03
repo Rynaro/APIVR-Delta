@@ -49,6 +49,7 @@ Load on-demand per phase. Do NOT load all skills upfront.
 | Test failure, lint error, build break | `.eidolons/apivr/skills/failure-recovery.md` |
 | Session start, session end, repeated pattern | `.eidolons/apivr/skills/memory-management.md` |
 | Reading upstream artefact (scout-report, spec, root-cause-report, reasoning-report) | `.eidolons/apivr/skills/verify-incoming.md` |
+| ESL-tracked change, V-phase completion (tonberry available) | `.eidolons/apivr/skills/esl-hop.md` |
 
 ## Phase Outputs
 
@@ -105,4 +106,4 @@ skill_invoke, ingest, session_end), and the reconciliation mapping.
 
 ## ECL
 
-This Eidolon targets ECL v1.0 (see `ECL_VERSION`). It emits three envelope kinds: `apivr-completion-report` (to IDG, Implement phase), `repair-failed-report` (to VIGIL, Reflect phase on 3-failure threshold), and `reasoning-request` (to FORGE, Plan phase consultation). Templates live at `.eidolons/apivr/templates/*.envelope.json`. On inbound artefacts from ATLAS/SPECTRA/VIGIL/FORGE, load the verify-incoming skill if a sibling `.envelope.json` is present.
+This Eidolon targets ECL v2.0 (see `ECL_VERSION`). It emits three envelope kinds: `apivr-completion-report` (to IDG, Implement phase), `repair-failed-report` (to VIGIL, Reflect phase on 3-failure threshold), and `reasoning-request` (to FORGE, Plan phase consultation). Templates live at `.eidolons/apivr/templates/*.envelope.json`. On inbound artefacts from ATLAS/SPECTRA/VIGIL/FORGE, load the verify-incoming skill if a sibling `.envelope.json` is present. In an ESL-enabled project (tonberry available), a V-phase completion on an ESL-tracked change does not self-verify — see `.eidolons/apivr/skills/esl-hop.md` (maker ≠ checker).

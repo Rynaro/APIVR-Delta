@@ -13,9 +13,9 @@ Load order for this repository:
 9. `templates/execution-plan.md` — Plan phase output skeleton (load during Plan)
 10. `templates/reflect-entry.md` — Reflect phase output skeleton (load on failure)
 
-## ECL v1.0
+## ECL v2.0
 
-This Eidolon targets ECL v1.0 (see `ECL_VERSION`). Three emit kinds:
+This Eidolon targets ECL v2.0 (see `ECL_VERSION`). Three emit kinds:
 
 - `apivr-completion-report` (to IDG, Implement-phase exit, `templates/apivr-completion-report.envelope.json`)
 - `repair-failed-report` (to VIGIL, Reflect-phase 3-failure escalation, `templates/repair-failed-report.envelope.json`)

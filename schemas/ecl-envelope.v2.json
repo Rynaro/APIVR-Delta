@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.7.1/schemas/ecl-envelope.v1.json",
-  "title": "ECL envelope v1 (vendored)",
-  "description": "Vendored copy of eidolons-ecl/schemas/envelope.v1.json for self-contained APIVR-Delta validation. Validates the ECL v1.0 envelope sidecar written next to every emitted APIVR-Delta artefact. Source-of-truth is the central ECL spec at Rynaro/eidolons-ecl; re-vendor when ECL publishes a new envelope schema version. Performative enum is inlined (not $ref'd) per ATLAS v1.5.0 precedent.",
+  "$id": "https://github.com/Rynaro/APIVR-Delta/blob/v3.8.0/schemas/ecl-envelope.v2.json",
+  "title": "ECL envelope v2 (vendored)",
+  "description": "Vendored copy of eidolons-ecl/schemas/envelope.v2.json for self-contained APIVR-Delta validation. Validates the ECL v2.0 envelope sidecar written next to every emitted APIVR-Delta artefact. ECL v2.0 adds the optional ISE trust-hierarchy block (§6.5); v1.x envelopes remain valid under the §7.3 compatibility window. Source-of-truth is the central ECL spec at Rynaro/eidolons-ecl; re-vendor when ECL publishes a new envelope schema version. Performative enum is inlined (not $ref'd) per ATLAS v1.5.0 precedent.",
   "type": "object",
   "required": [
     "envelope_version",
@@ -20,8 +20,8 @@
   "properties": {
     "envelope_version": {
       "type": "string",
-      "pattern": "^1\\.0(\\.\\d+)?$",
-      "description": "ECL spec version this envelope conforms to. ECL v1.0 §1.1.1."
+      "pattern": "^(1\\.[012]|2\\.0)(\\.\\d+)?$",
+      "description": "ECL spec version this envelope conforms to. ECL v2.0 §1.1.1. Accepts v1.0, v1.1, v1.2 (§7.3 compat window) and v2.0."
     },
     "message_id": {
       "type": "string",
@@ -45,11 +45,11 @@
     "performative": {
       "type": "string",
       "enum": ["REQUEST", "INFORM", "PROPOSE", "CRITIQUE", "DECIDE", "DELEGATE", "ACKNOWLEDGE", "ESCALATE", "RESUME", "REFUSE"],
-      "description": "ECL v1.0 §2. Enum inlined (not $ref'd) per ATLAS v1.5.0 precedent."
+      "description": "ECL v2.0 §2. Enum inlined (not $ref'd) per ATLAS v1.5.0 precedent."
     },
     "edge_origin": {
       "enum": ["roster", "composition", "implicit"],
-      "description": "Where the (from, to) edge is declared. ECL v1.0 §3.3."
+      "description": "Where the (from, to) edge is declared. ECL v2.0 §3.3."
     },
     "objective": {
       "type": "string",
@@ -115,6 +115,10 @@
       },
       "additionalProperties": false
     },
+    "ise": {
+      "$ref": "#/$defs/ise",
+      "description": "ISE (Intent, Source, Entitlement) trust-hierarchy block. Optional at v2.0. ECL v2.0 §6.5."
+    },
     "expected_response": {
       "type": "object",
       "properties": {
@@ -146,12 +150,12 @@
       "properties": {
         "method": {
           "enum": ["sha256", "hmac-sha256"],
-          "description": "ECL v1.0 §6.1."
+          "description": "ECL v2.0 §6.1."
         },
         "value": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$",
-          "description": "Lowercase hex digest. ECL v1.0 §6.2.1."
+          "description": "Lowercase hex digest. ECL v2.0 §6.2.1."
         }
       },
       "additionalProperties": false
@@ -175,7 +179,7 @@
         },
         "tier": {
           "enum": ["standard", "trance"],
-          "description": "Routing tier. ECL v1.0 §5.2."
+          "description": "Routing tier. ECL v2.0 §5.2."
         }
       },
       "additionalProperties": false
@@ -183,7 +187,7 @@
   },
   "patternProperties": {
     "^x_[a-z][a-z0-9_]*$": {
-      "description": "Vendor extension fields. Receivers SHALL ignore unknown x_* fields. ECL v1.0 §1.2.3."
+      "description": "Vendor extension fields. Receivers SHALL ignore unknown x_* fields. ECL v2.0 §1.2.3."
     }
   },
   "additionalProperties": false,
@@ -204,6 +208,58 @@
         }
       },
       "additionalProperties": false
+    },
+    "ise": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assertion_grade"],
+      "properties": {
+        "assertion_grade": {
+          "type": "string",
+          "enum": ["unverified", "self-attested", "validated", "human-reviewed"],
+          "description": "Emitter's claim about how the artefact was produced. 'unverified' = emitted without internal checks; 'self-attested' = emitter ran its own validation; 'validated' = emitter ran spec-mandated gates; 'human-reviewed' = operator signed off."
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["methodology_version"],
+          "properties": {
+            "methodology_version": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*-\\d+\\.\\d+\\.\\d+$",
+              "description": "Eidolon methodology + semver, e.g. 'spectra-4.3.1', 'apivr-3.7.1'."
+            },
+            "tool_surface": {
+              "type": "array",
+              "items": { "type": "string" },
+              "maxItems": 32,
+              "description": "Distinct tool primitives invoked during artefact production (e.g. 'read','grep','bash')."
+            },
+            "lateral_consults": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["eidolon", "performative"],
+                "properties": {
+                  "eidolon": { "type": "string" },
+                  "performative": { "type": "string", "enum": ["INFORM","REQUEST","QUERY","INFORM-RESULT","INFORM-FAILURE","COMMIT","REJECT","ACK","CANCEL","SUBSCRIBE"] }
+                }
+              },
+              "maxItems": 8,
+              "description": "Inline-recorded sibling-Eidolon consults that informed this artefact."
+            }
+          }
+        },
+        "receiver_authorization": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "auto_route":  { "type": "boolean", "default": true,  "description": "Receiver MAY hand the envelope to the next contracted edge without operator confirm." },
+            "auto_merge":  { "type": "boolean", "default": false, "description": "Receiver MAY merge the artefact into a mainline branch without operator confirm." },
+            "auto_deploy": { "type": "boolean", "default": false, "description": "Receiver MAY deploy/publish without operator confirm." }
+          }
+        }
+      }
     }
   }
 }
