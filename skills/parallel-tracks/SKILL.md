@@ -88,7 +88,7 @@ envelope per passed track.
 - A track **may NOT borrow another track's retries.** Budgets are
   non-fungible.
 - A track that exhausts its ≤3 budget is marked **BLOCKED**, excluded from the
-  merge, and **never silently re-driven**. See `skills/failure-recovery.md`
+  merge, and **never silently re-driven**. See `skills/failure-recovery/SKILL.md`
   (per-track non-fungibility + cross-track INTEGRATION_ERROR).
 
 ---
@@ -116,7 +116,7 @@ the write boundary stays single-threaded even though the fan-out was parallel.
    pass^k reliability gate (methodology.md V-VERIFY): a result that passes once
    but is non-deterministic across repeats is **flaky → BLOCKED**, not merged.
 3. **Classify cross-track breaks as `INTEGRATION_ERROR`** via the existing
-   failure taxonomy (`skills/failure-recovery.md`). A regression that appears
+   failure taxonomy (`skills/failure-recovery/SKILL.md`). A regression that appears
    ONLY after merge (each track passed in isolation) is `INTEGRATION_ERROR`,
    routed to the merge step's reflection — **not** back into a track.
 4. **Emit the aggregation artifact:** `templates/tracks-merge-report.md` — a

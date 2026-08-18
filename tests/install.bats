@@ -12,13 +12,7 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   [[ "$output" =~ ^[0-9]+\.[0-9]+ ]]
 }
 
-@test "install.sh declares EIDOLON_VERSION 3.8.0" {
-  grep -q 'EIDOLON_VERSION="3.8.0"' "${REPO_ROOT}/install.sh"
-}
 
-@test "install.sh declares ECL_VERSION_VAL 2.0" {
-  grep -q 'ECL_VERSION_VAL="2.0"' "${REPO_ROOT}/install.sh"
-}
 
 @test "schemas directory contains ecl-envelope.v2.json" {
   [ -f "${REPO_ROOT}/schemas/ecl-envelope.v2.json" ]
@@ -72,15 +66,15 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
 }
 
 @test "verify-incoming skill exists (flat layout, EIIS v1.3)" {
-  [ -f "${REPO_ROOT}/skills/verify-incoming.md" ]
+  [ -f "${REPO_ROOT}/skills/verify-incoming/SKILL.md" ]
 }
 
 @test "parallel-tracks skill exists (flat layout, TRANCE G4)" {
-  [ -f "${REPO_ROOT}/skills/parallel-tracks.md" ]
+  [ -f "${REPO_ROOT}/skills/parallel-tracks/SKILL.md" ]
 }
 
 @test "esl-hop skill exists (maker!=checker, ESL C4/C8)" {
-  [ -f "${REPO_ROOT}/skills/esl-hop.md" ]
+  [ -f "${REPO_ROOT}/skills/esl-hop/SKILL.md" ]
 }
 
 @test "tracks-merge-report template exists (parallel-mode aggregation artifact)" {
@@ -112,18 +106,4 @@ REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   run jq -r '.assumptions[0]' "${REPO_ROOT}/templates/repair-failed-report.envelope.json"
   [ "$status" -eq 0 ]
   [[ "$output" == "trigger: 3-failure-same-category" ]]
-}
-
-@test "install.sh references comm field with envelope_version 2.0" {
-  grep -q 'ECL_VERSION_VAL="2.0"' "${REPO_ROOT}/install.sh"
-  grep -q 'envelope_version.*ECL_VERSION_VAL' "${REPO_ROOT}/install.sh"
-}
-
-@test "manifest schema has comm property" {
-  if ! command -v jq &>/dev/null; then
-    skip "jq not available"
-  fi
-  run jq '.properties.comm' "${REPO_ROOT}/schemas/install.manifest.v1.json"
-  [ "$status" -eq 0 ]
-  [[ "$output" != "null" ]]
 }

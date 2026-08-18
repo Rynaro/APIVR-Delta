@@ -98,7 +98,7 @@ Any tool that reads markdown instruction files can use this system. Point your t
 
 ### Asset Discovery Paths
 
-The methodology references standard paths (e.g., `app/models/DOMAIN/`). Update these in `skills/methodology.md` → "Asset Discovery" section to match your project structure:
+The methodology references standard paths (e.g., `app/models/DOMAIN/`). Update these in `skills/methodology/SKILL.md` → "Asset Discovery" section to match your project structure:
 
 ```markdown
 | Asset Type | Search Pattern | Purpose |
@@ -109,7 +109,7 @@ The methodology references standard paths (e.g., `app/models/DOMAIN/`). Update t
 
 ### Scoring Dimensions
 
-The default scoring matrix (Risk, Effort, Alignment, Maintainability) covers most cases. Add domain-specific dimensions in the Plan phase section of `skills/methodology.md` if needed.
+The default scoring matrix (Risk, Effort, Alignment, Maintainability) covers most cases. Add domain-specific dimensions in the Plan phase section of `skills/methodology/SKILL.md` if needed.
 
 ### Memory Location
 
@@ -152,3 +152,17 @@ Plus community patterns from GitHub AGENTS.md analysis (2,500+ repos), Anthropic
 ## License
 
 Use freely. Attribution appreciated but not required.
+
+<!-- eiis-v3-package:start -->
+## EIIS v3 package
+
+This repository has the same self-contained package shape as every roster Eidolon:
+
+- `PERSONA.md` — bounded identity, triggers, authority, refusals, and handoffs.
+- `SPEC.md` — the authoritative methodology.
+- `skills/<methodology>/SKILL.md` — unique skill discovery entrypoints.
+- `manifest.json` — immutable package metadata and resource inventory.
+- `install.sh` — package-only installer; the nexus owns vendor adapters.
+
+See [INSTALL.md](INSTALL.md) for nexus and standalone installation.
+<!-- eiis-v3-package:end -->

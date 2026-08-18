@@ -36,9 +36,9 @@ mcp__crystalium__commit(
 ```
 
 **Graceful skip:** if CRYSTALIUM unavailable, write to `agents/memories/failure-catalog.md`
-per the Standalone Fallback in `skills/memory-management.md`. Never write both.
+per the Standalone Fallback in `skills/memory-management/SKILL.md`. Never write both.
 
-See `skills/memory-management.md` for the full routing decision.
+See `skills/memory-management/SKILL.md` for the full routing decision.
 
 ---
 
@@ -216,7 +216,7 @@ If REGRESSION failed twice:
 
 ### Parallel Multi-Track Mode (TRANCE G4)
 
-When running the parallel multi-track mode (`skills/parallel-tracks.md`), the
+When running the parallel multi-track mode (`skills/parallel-tracks/SKILL.md`), the
 retry contract is scoped **per worktree**:
 
 - **Per-track budget NON-FUNGIBILITY.** The ≤3-same-category budget is scoped to

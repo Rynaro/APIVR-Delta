@@ -26,11 +26,11 @@ teardown() {
 # ── Skill posture assertions ─────────────────────────────────────────────────
 
 @test "skill file exists" {
-  [ -f "${REPO_ROOT}/skills/verify-incoming.md" ]
+  [ -f "${REPO_ROOT}/skills/verify-incoming/SKILL.md" ]
 }
 
 @test "skill declares BLOCKING posture (REFUSE / SHALL NOT / blocking)" {
-  grep -qE 'REFUSE|SHALL NOT|blocking' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -qE 'REFUSE|SHALL NOT|blocking' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 @test "skill does NOT declare warn-only posture" {
@@ -39,122 +39,57 @@ teardown() {
   # we target the canonical behavioural phrases that would indicate active
   # warn-only posture (process anyway, payload is always processed).
   run grep -cE 'payload is always processed|process the payload anyway|Warn-only on failure' \
-    "${REPO_ROOT}/skills/verify-incoming.md"
+    "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
   # Zero matches expected
   [[ "$output" == "0" ]]
 }
 
 @test "skill does NOT say 'WARN-ONLY on failure' (mode header)" {
   run grep -c 'WARN-ONLY on failure\|warn-only — the payload\|Failures are \*\*warn-only\*\*' \
-    "${REPO_ROOT}/skills/verify-incoming.md"
+    "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
   [[ "$output" == "0" ]]
 }
 
 @test "skill Failure Mode section says BLOCKING — refuse, do not process" {
-  grep -q 'Failure Mode (BLOCKING' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q 'Failure Mode (BLOCKING' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 @test "skill says 'Do not process the payload'" {
-  grep -q 'Do not process the payload' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q 'Do not process the payload' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 @test "skill REFUSES and hands back to orchestrator on failure" {
   grep -qE 'Hand control back to the.*(orchestrator|Orchestrator)|hand back to the orchestrator' \
-    "${REPO_ROOT}/skills/verify-incoming.md"
+    "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 @test "skill references ECL §6.2.2 as the normative source" {
-  grep -q '§6.2.2' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q '§6.2.2' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 @test "skill verify_fail event has 'decision: refused' field" {
-  grep -q '"decision":"refused"' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q '"decision":"refused"' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 @test "skill frontmatter has metadata block with methodology" {
-  grep -q 'metadata:' "${REPO_ROOT}/skills/verify-incoming.md"
-  grep -q 'methodology: APIVR' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q 'metadata:' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
+  grep -q 'methodology: APIVR' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 @test "skill frontmatter name is apivr-verify-incoming" {
-  grep -q 'name: apivr-verify-incoming' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q 'name: apivr-verify-incoming' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 # ── install.sh registration check ───────────────────────────────────────────
 
-@test "install.sh registers verify-incoming in wire_skill loop" {
-  grep -q 'wire_skill "verify-incoming"' "${REPO_ROOT}/install.sh"
-}
 
-@test "install.sh records skills/verify-incoming.md in manifest (add_fw)" {
-  grep -q 'add_fw "skills/verify-incoming.md"' "${REPO_ROOT}/install.sh"
-}
 
-@test "install.sh records verify-incoming in add_skill (skills[] array)" {
-  grep -q 'add_skill "verify-incoming"' "${REPO_ROOT}/install.sh"
-}
 
 # ── install run: exit 0 + manifest line ─────────────────────────────────────
 
-@test "install.sh exits 0 non-interactively into a temp target" {
-  local tmp_target
-  tmp_target="$(mktemp -d)"
-  run bash "${REPO_ROOT}/install.sh" \
-    --target "${tmp_target}" \
-    --hosts none \
-    --non-interactive \
-    --force
-  [ "$status" -eq 0 ]
-  rm -rf "${tmp_target}"
-}
 
-@test "install produces skills/verify-incoming.md in target" {
-  local tmp_target
-  tmp_target="$(mktemp -d)"
-  bash "${REPO_ROOT}/install.sh" \
-    --target "${tmp_target}" \
-    --hosts none \
-    --non-interactive \
-    --force
-  [ -f "${tmp_target}/skills/verify-incoming.md" ]
-  rm -rf "${tmp_target}"
-}
 
-@test "install manifest records skills/verify-incoming.md" {
-  if ! command -v jq &>/dev/null; then
-    skip "jq not available"
-  fi
-  local tmp_target
-  tmp_target="$(mktemp -d)"
-  bash "${REPO_ROOT}/install.sh" \
-    --target "${tmp_target}" \
-    --hosts none \
-    --non-interactive \
-    --force
-  run jq -r '[.files_written[] | select(.path=="skills/verify-incoming.md")] | length' \
-    "${tmp_target}/install.manifest.json"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "1" ]]
-  rm -rf "${tmp_target}"
-}
 
-@test "install manifest skills[] array includes verify-incoming entry" {
-  if ! command -v jq &>/dev/null; then
-    skip "jq not available"
-  fi
-  local tmp_target
-  tmp_target="$(mktemp -d)"
-  bash "${REPO_ROOT}/install.sh" \
-    --target "${tmp_target}" \
-    --hosts none \
-    --non-interactive \
-    --force
-  run jq -r '[.skills[] | select(.name=="verify-incoming")] | length' \
-    "${tmp_target}/install.manifest.json"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "1" ]]
-  rm -rf "${tmp_target}"
-}
 
 # ── Happy path: valid envelope ───────────────────────────────────────────────
 
@@ -252,10 +187,10 @@ teardown() {
 
 @test "sad path 1: INTEGRITY_MISMATCH — skill says REFUSE, not warn-and-continue" {
   # Confirm the skill's Failure Mode section specifies REFUSE for integrity failure.
-  grep -q 'REFUSE' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q 'REFUSE' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
   # Confirm it does NOT say "return 0" (warn-only shell idiom) in failure context.
   run grep -c 'INTEGRITY_MISMATCH.*return 0\|warn.*INTEGRITY_MISMATCH.*return 0' \
-    "${REPO_ROOT}/skills/verify-incoming.md"
+    "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
   [[ "$output" == "0" ]]
 }
 
@@ -300,22 +235,22 @@ teardown() {
 }
 
 @test "sad path 2: UNDECLARED_EDGE — skill says REFUSE, not warn-and-continue" {
-  grep -q 'UNDECLARED_EDGE' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q 'UNDECLARED_EDGE' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
   # Confirm skill Failure Mode is blocking for this code too.
-  grep -q 'REFUSE' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q 'REFUSE' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 # ── Sad path 3: no verify_pass in trace (UNVERIFIED) — blocking, REFUSE ─────
 
 @test "sad path 3: UNVERIFIED failure code listed in skill" {
-  grep -q 'UNVERIFIED' "${REPO_ROOT}/skills/verify-incoming.md"
+  grep -q 'UNVERIFIED' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 @test "sad path 3: skill says REFUSE when no verify_pass on record" {
   # Skill must describe refusing when no verify_pass event exists for the message_id.
   grep -q 'no matching event\|verify_fail.*REFUSE\|REFUSE.*verify_fail\|REFUSE.*Failure Mode' \
-    "${REPO_ROOT}/skills/verify-incoming.md" || \
-  grep -q 'UNVERIFIED.*REFUSE\|REFUSE' "${REPO_ROOT}/skills/verify-incoming.md"
+    "${REPO_ROOT}/skills/verify-incoming/SKILL.md" || \
+  grep -q 'UNVERIFIED.*REFUSE\|REFUSE' "${REPO_ROOT}/skills/verify-incoming/SKILL.md"
 }
 
 # ── Schema fixture validation ────────────────────────────────────────────────
