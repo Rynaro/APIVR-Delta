@@ -232,10 +232,10 @@ When the Analyze phase ingests an artefact handed off by ATLAS (`scout-report`),
 
 If present:
 
-1. Load `skills/verify-incoming.md`.
+1. Load `skills/verify-incoming/SKILL.md`.
 2. Run the validation pipeline (schema → integrity → contract match).
 3. On `verify_pass`, proceed.
-4. On `verify_fail`, **REFUSE** — do not process the payload. Append the failure code to `.eidolons/.trace/<thread_id>.jsonl` and hand control back to the orchestrator. See `skills/verify-incoming.md` for the blocking gate protocol.
+4. On `verify_fail`, **REFUSE** — do not process the payload. Append the failure code to `.eidolons/.trace/<thread_id>.jsonl` and hand control back to the orchestrator. See `skills/verify-incoming/SKILL.md` for the blocking gate protocol.
 
 If the sibling envelope is absent, proceed without verification. This is expected during the ECL rollout window when upstream Eidolons may not yet have adopted.
 

@@ -78,7 +78,7 @@ suite is framed pass^k. Project memory confirms the failure mode directly:
 fanning out multiple agents on one working tree clobbers branches
 (`feedback_parallel_agents_same_repo`).
 
-**Decision**: Operationalize the TRANCE G4 form (`skills/parallel-tracks.md`,
+**Decision**: Operationalize the TRANCE G4 form (`skills/parallel-tracks/SKILL.md`,
 SPEC.md §9) as a bounded protocol — entry gate (disjoint file sets + Complex +
 TRANCE), max 5 tracks each in its **own git worktree** (`isolation: worktree`
 MANDATORY, invariant I-8), clean-context subagents, a per-track verifier

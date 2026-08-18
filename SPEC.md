@@ -3,7 +3,7 @@
 Evidence-grounded, test-anchored, context-aware feature implementation for brownfield codebases.
 
 **Version**: 3.8.0  
-**Entry point**: `agent.md` (always-loaded, ≤1000 tokens)
+**Entry point**: `PERSONA.md` (always-loaded, ≤1000 tokens)
 
 ---
 
@@ -31,11 +31,11 @@ Load on-demand. Do NOT front-load all skills.
 
 | Skill | File | When to Load |
 |---|---|---|
-| Full cycle definition | `skills/methodology.md` | Planning, scoring strategies |
-| Context engineering | `skills/context-engineering.md` | Starting Analyze phase |
-| Failure recovery | `skills/failure-recovery.md` | Test failure, lint error, build break |
-| Memory management | `skills/memory-management.md` | Session start, session end, repeated pattern |
-| Parallel multi-track (G4) | `skills/parallel-tracks.md` | TRANCE-authorized AND Plan yields disjoint-file tracks (see §9) |
+| Full cycle definition | `skills/methodology/SKILL.md` | Planning, scoring strategies |
+| Context engineering | `skills/context-engineering/SKILL.md` | Starting Analyze phase |
+| Failure recovery | `skills/failure-recovery/SKILL.md` | Test failure, lint error, build break |
+| Memory management | `skills/memory-management/SKILL.md` | Session start, session end, repeated pattern |
+| Parallel multi-track (G4) | `skills/parallel-tracks/SKILL.md` | TRANCE-authorized AND Plan yields disjoint-file tracks (see §9) |
 
 ---
 
@@ -154,7 +154,7 @@ promotion, dedup, and pruning. Do NOT hand-consolidate when CRYSTALIUM is presen
 
 Full layer × tier matrix, `plan_checkpoint`/`plan_replan` semantics, and Dream
 knobs: `methodology/cortex/memory-protocol.md` (nexus repo). Skill detail:
-`skills/memory-management.md`.
+`skills/memory-management/SKILL.md`.
 
 ---
 
@@ -172,7 +172,7 @@ APIVR-Δ v3.8.0 targets **ECL v2.0** (see `ECL_VERSION` at the repo root).
 
 ### Inbound verification (blocking, symmetric)
 
-When an upstream artefact arrives with a sibling `.envelope.json`, load `skills/verify-incoming.md` to validate schema, integrity, and contract match. Failures are **blocking** — the payload is NOT processed without a prior `verify_pass`. See ECL §6.2.2.
+When an upstream artefact arrives with a sibling `.envelope.json`, load `skills/verify-incoming/SKILL.md` to validate schema, integrity, and contract match. Failures are **blocking** — the payload is NOT processed without a prior `verify_pass`. See ECL §6.2.2.
 
 | Kind | From | Contract |
 |---|---|---|
@@ -189,7 +189,7 @@ APIVR-Δ v3.8.0 accepts ECL envelopes matching `^2\.0(\.\d+)?$`. Receivers on VI
 
 ## §9 Parallel Multi-Track Mode (TRANCE G4)
 
-Authoritative description of the TRANCE G4 form. Full procedure: `skills/parallel-tracks.md`.
+Authoritative description of the TRANCE G4 form. Full procedure: `skills/parallel-tracks/SKILL.md`.
 
 **Single-track is the default.** The standard A→P→I→V→Δ/R cycle runs for every task. This mode activates ONLY under TRANCE authorization (a complexity flag AND a stakes flag, cortex C6) AND the entry gate below. It is **never** the default — it adds parallelism, not a fresh budget (trance-matrix R3) and not reflection past the published caps (trance-matrix R4). Absent TRANCE gating, APIVR-Δ runs exactly as today.
 
@@ -216,7 +216,7 @@ The per-track verifier cascade and merge here are **host-interpreted methodology
 
 ### §9.1 Verification hardening (anti-overfit + pass^k)
 
-The Plan and Verify phases are hardened against the field's named contamination/overfitting failures (see `skills/methodology.md`):
+The Plan and Verify phases are hardened against the field's named contamination/overfitting failures (see `skills/methodology/SKILL.md`):
 
 - **Anti-overfit test anchoring** (P-PLAN): test anchors derive from the acceptance criteria + EXISTING test patterns, never reverse-engineered from a candidate implementation (Decision 3 — agents over-fit implementations to tests written in hindsight).
 - **Capture-live-first** (P-PLAN): when a track parses external CLI stdout/stderr or serde-renamed IPC, the verbatim live capture MUST be staged as the fixture BEFORE the parser is written (fabricated fixtures pass vacuously).

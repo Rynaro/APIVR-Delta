@@ -40,7 +40,7 @@ tasks in the same module, known reusable assets, and previous failure patterns.
 
 Score matches by: path proximity → recency → outcome quality. Budget: ≤ 20 entries.
 
-See `agents/skills/memory-management.md` for the full routing decision and protocol.
+See `agents/skills/memory-management/SKILL.md` for the full routing decision and protocol.
 
 ### Step 2: Repo Map Generation
 Before reading any file in detail, generate a structural overview:
@@ -337,7 +337,7 @@ Run and capture output for ALL of these:
 
 A single green run is necessary but NOT sufficient. For any test the host can
 re-run (and ALWAYS for the post-merge regression suite in parallel-track mode,
-`skills/parallel-tracks.md`), frame verification as **pass^k**: a test that
+`skills/parallel-tracks/SKILL.md`), frame verification as **pass^k**: a test that
 passes once but is **non-deterministic across repeats** is classified **flaky**
 and the change is **BLOCKED — not merged**, not silently accepted. This guards
 against the field's pass^k reliability collapse (a result that holds at k=1 but
@@ -350,7 +350,7 @@ discipline. Treat a flaky anchor as a verification FAILURE: route to **R
 
 ## R — REFLECT Phase (Failure Only)
 
-Load skill: `agents/skills/failure-recovery.md`
+Load skill: `agents/skills/failure-recovery/SKILL.md`
 
 ### Evidence Gate (MANDATORY)
 
@@ -364,11 +364,11 @@ Load skill: `agents/skills/failure-recovery.md`
 
 ### ECL emit on 3-failure escalation
 
-When the 3-failure-same-category threshold fires, the escalation MUST be wrapped in a `repair-failed-report.envelope.json` (template at `templates/repair-failed-report.envelope.json`). Required: `to.eidolon=vigil`, `performative=ESCALATE`, `trust_level=high`, `assumptions[0]="trigger: 3-failure-same-category"`. Profile schema: `schemas/repair-failed-report-profile.v1.json` (required keys: `attempts>=3`, `failure_category`, `last_test_command`). See `skills/failure-recovery.md` for the full escalation envelope contract. Skip when `ECL_VERSION` is absent.
+When the 3-failure-same-category threshold fires, the escalation MUST be wrapped in a `repair-failed-report.envelope.json` (template at `templates/repair-failed-report.envelope.json`). Required: `to.eidolon=vigil`, `performative=ESCALATE`, `trust_level=high`, `assumptions[0]="trigger: 3-failure-same-category"`. Profile schema: `schemas/repair-failed-report-profile.v1.json` (required keys: `attempts>=3`, `failure_category`, `last_test_command`). See `skills/failure-recovery/SKILL.md` for the full escalation envelope contract. Skip when `ECL_VERSION` is absent.
 
 ### Failure Protocol
 
-See `agents/skills/failure-recovery.md` for the full classification taxonomy and recovery procedures. Quick reference:
+See `agents/skills/failure-recovery/SKILL.md` for the full classification taxonomy and recovery procedures. Quick reference:
 
 | Attempt | Condition | Action |
 |---------|-----------|--------|
@@ -450,7 +450,7 @@ Status: SUGGESTION ONLY — Do not implement
 ## Post-Task: Memory Update (Δ/R phase)
 
 After every task (success or failure), update memory via the active path.
-See `agents/skills/memory-management.md` for the full protocol.
+See `agents/skills/memory-management/SKILL.md` for the full protocol.
 
 **CRYSTALIUM path** (when available):
 
@@ -472,7 +472,7 @@ mcp__crystalium__session_end()   # triggers Dream consolidation
 ```
 
 **Standalone path** (when CRYSTALIUM absent): write to `agents/memories/`
-files per `skills/memory-management.md §Standalone Fallback`.
+files per `skills/memory-management/SKILL.md §Standalone Fallback`.
 
 ---
 

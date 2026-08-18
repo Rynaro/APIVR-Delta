@@ -44,12 +44,12 @@ Load on-demand per phase. Do NOT load all skills upfront.
 
 | Trigger | Skill File |
 |---|---|
-| Starting Analyze phase | `.eidolons/apivr/skills/context-engineering.md` |
-| Planning or scoring strategies | `.eidolons/apivr/skills/methodology.md` |
-| Test failure, lint error, build break | `.eidolons/apivr/skills/failure-recovery.md` |
-| Session start, session end, repeated pattern | `.eidolons/apivr/skills/memory-management.md` |
-| Reading upstream artefact (scout-report, spec, root-cause-report, reasoning-report) | `.eidolons/apivr/skills/verify-incoming.md` |
-| ESL-tracked change, V-phase completion (tonberry available) | `.eidolons/apivr/skills/esl-hop.md` |
+| Starting Analyze phase | `.eidolons/apivr/skills/context-engineering/SKILL.md` |
+| Planning or scoring strategies | `.eidolons/apivr/skills/methodology/SKILL.md` |
+| Test failure, lint error, build break | `.eidolons/apivr/skills/failure-recovery/SKILL.md` |
+| Session start, session end, repeated pattern | `.eidolons/apivr/skills/memory-management/SKILL.md` |
+| Reading upstream artefact (scout-report, spec, root-cause-report, reasoning-report) | `.eidolons/apivr/skills/verify-incoming/SKILL.md` |
+| ESL-tracked change, V-phase completion (tonberry available) | `.eidolons/apivr/skills/esl-hop/SKILL.md` |
 
 ## Phase Outputs
 
@@ -100,10 +100,10 @@ mcp__crystalium__recall(
 **Graceful skip:** if CRYSTALIUM is not installed, fall back to querying
 `agents/memories/` (task-log, failure-catalog, pattern-registry).
 
-See `.eidolons/apivr/skills/memory-management.md` for the full
+See `.eidolons/apivr/skills/memory-management/SKILL.md` for the full
 CRYSTALIUM-primary / local-fallback protocol, phase hooks (plan_checkpoint,
 skill_invoke, ingest, session_end), and the reconciliation mapping.
 
 ## ECL
 
-This Eidolon targets ECL v2.0 (see `ECL_VERSION`). It emits three envelope kinds: `apivr-completion-report` (to IDG, Implement phase), `repair-failed-report` (to VIGIL, Reflect phase on 3-failure threshold), and `reasoning-request` (to FORGE, Plan phase consultation). Templates live at `.eidolons/apivr/templates/*.envelope.json`. On inbound artefacts from ATLAS/SPECTRA/VIGIL/FORGE, load the verify-incoming skill if a sibling `.envelope.json` is present. In an ESL-enabled project (tonberry available), a V-phase completion on an ESL-tracked change does not self-verify — see `.eidolons/apivr/skills/esl-hop.md` (maker ≠ checker).
+This Eidolon targets ECL v2.0 (see `ECL_VERSION`). It emits three envelope kinds: `apivr-completion-report` (to IDG, Implement phase), `repair-failed-report` (to VIGIL, Reflect phase on 3-failure threshold), and `reasoning-request` (to FORGE, Plan phase consultation). Templates live at `.eidolons/apivr/templates/*.envelope.json`. On inbound artefacts from ATLAS/SPECTRA/VIGIL/FORGE, load the verify-incoming skill if a sibling `.envelope.json` is present. In an ESL-enabled project (tonberry available), a V-phase completion on an ESL-tracked change does not self-verify — see `.eidolons/apivr/skills/esl-hop/SKILL.md` (maker ≠ checker).

@@ -31,11 +31,11 @@ run your standard A→P→I→V→Δ/R cycle unchanged instead (graceful skip, b
    the change from `specify` (SPECTRA's hop, or Kupo's no-spec micro-change for
    a trivial change) into your implement window.
 2. **implement** — run your normal **A → P → I → V → Δ/R** cycle
-   (`skills/methodology.md`) against the spec in the change folder. The
+   (`skills/methodology/SKILL.md`) against the spec in the change folder. The
    change's `acceptance_checks` are your test anchors (I-4, anti-overfit;
    derived from the spec, never reverse-engineered from a candidate
    implementation — see Plan-phase Step 1: Test Anchor Generation). Route by
-   complexity as usual; TRANCE G4 (`skills/parallel-tracks.md`) applies
+   complexity as usual; TRANCE G4 (`skills/parallel-tracks/SKILL.md`) applies
    unchanged when gated.
 3. **hand off to the CHECKER** — on Verify-phase success, you do **NOT**
    self-verify to `verified`. Hand off via ECL **PROPOSE**: **Kupo** for
@@ -44,7 +44,7 @@ run your standard A→P→I→V→Δ/R cycle unchanged instead (graceful skip, b
    or a named external verifier for broader changes. Emit your normal ECL
    envelope (`apivr-completion-report` → success/checker-handoff path;
    `repair-failed-report` → escalation path on the 3-failure threshold — see
-   `skills/methodology.md` "ECL emit on Implement-phase exit" / "ECL emit on
+   `skills/methodology/SKILL.md` "ECL emit on Implement-phase exit" / "ECL emit on
    3-failure escalation"). Both envelopes carry `ise.assertion_grade:
    "self-attested"` — your own V-phase is self-review, not external
    validation; the checker's fresh-context pass is what actually advances the
